@@ -1,0 +1,4 @@
+- exp.name=test
+- method=protonet
+- dataset=swissprot
+- mode=test
