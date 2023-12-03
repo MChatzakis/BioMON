@@ -4,9 +4,15 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from methods.meta_template import MetaTemplate
-
+from methods.heads import ClassificationHead, head_fit
 
 class BioMetaOptNet(MetaTemplate):
+    """
+    BioMetaOptNet is a MetaOptNet variant for Biomedical data collections.
+    
+    Args:
+        MetaTemplate (_type_): _description_
+    """
     def __init__(self, backbone, head_model_params, n_way, n_support):
         super(BioMetaOptNet, self).__init__(backbone, n_way, n_support)
         self.loss_fn = nn.CrossEntropyLoss()
@@ -15,7 +21,7 @@ class BioMetaOptNet(MetaTemplate):
         self.n_support = n_support
         self.head_model_params = head_model_params
 
-    def initialize_model(self):
+    def initialize_model(self) -> ClassificationHead:
         raise NotImplementedError
     
     def set_forward(self, x, is_feature=False):
@@ -26,7 +32,7 @@ class BioMetaOptNet(MetaTemplate):
 
         z_support_labels = torch.from_numpy(np.repeat(range(self.n_way), self.n_support))
         
-        head = self.initialize_model()
+        head = self.initialize_model() #todo 
         head.fit(z_support, z_support_labels)
         
         scores = head.get_logits(z_query)
