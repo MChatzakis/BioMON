@@ -6,13 +6,15 @@ from torch.autograd import Variable
 from methods.meta_template import MetaTemplate
 from methods.heads import ClassificationHead, head_fit
 
+
 class BioMetaOptNet(MetaTemplate):
     """
     BioMetaOptNet is a MetaOptNet variant for Biomedical data collections.
-    
+
     Args:
         MetaTemplate (_type_): _description_
     """
+
     def __init__(self, backbone, head_model_params, n_way, n_support):
         super(BioMetaOptNet, self).__init__(backbone, n_way, n_support)
         self.loss_fn = nn.CrossEntropyLoss()
@@ -23,23 +25,25 @@ class BioMetaOptNet(MetaTemplate):
 
     def initialize_model(self) -> ClassificationHead:
         raise NotImplementedError
-    
+
     def set_forward(self, x, is_feature=False):
         z_support, z_query = self.parse_feature(x, is_feature)
 
         z_query = z_query.contiguous().view(self.n_way * self.n_query, -1)
         z_support = z_support.contiguous().view(self.n_way * self.n_support, -1)
 
-        z_support_labels = torch.from_numpy(np.repeat(range(self.n_way), self.n_support))
-        
-        head = self.initialize_model() #todo 
+        z_support_labels = torch.from_numpy(
+            np.repeat(range(self.n_way), self.n_support)
+        )
+
+        head = self.initialize_model()  # todo
         head.fit(z_support, z_support_labels)
-        
+
         scores = head.get_logits(z_query)
         return scores
-    
+
     def set_forward_loss(self, x):
-        y_query = torch.from_numpy(np.repeat(range( self.n_way ), self.n_query ))
+        y_query = torch.from_numpy(np.repeat(range(self.n_way), self.n_query))
         y_query = Variable(y_query.cuda())
 
         scores = self.set_forward(x)
