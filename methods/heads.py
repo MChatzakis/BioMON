@@ -5,6 +5,8 @@ from torch.autograd import Variable
 
 from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 
 class ClassificationHead(nn.Module):
@@ -45,6 +47,13 @@ class ClassificationHead(nn.Module):
         pass
 
 
+######################################################################
+#                                                                    #
+# Classification heads: Classic Algorithms implemented with sklearn  #
+#                                                                    #
+######################################################################
+
+
 class SVM_Head(ClassificationHead):
     """
     Multi-class Support Vector Machine classification head.
@@ -79,22 +88,6 @@ class SVM_Head(ClassificationHead):
         self.model.fit(X_train, y_train)
 
 
-class NN_Head(ClassificationHead):
-    """
-    Multi-class Neural Network classification head.
-    """
-
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def get_logits(self, query_features):
-        pass
-
-    def fit(self, support_features, support_labels):
-        pass
-
-
 class RR_Head(ClassificationHead):
     """
     Ridge Regression classification head.
@@ -102,13 +95,13 @@ class RR_Head(ClassificationHead):
 
     def __init__(self):
         super().__init__()
-        pass
+        raise NotImplementedError
 
     def get_logits(self, query_features):
-        pass
+        raise NotImplementedError
 
     def fit(self, support_features, support_labels):
-        pass
+        raise NotImplementedError
 
 
 class DecisionTree_Head(ClassificationHead):
@@ -118,67 +111,74 @@ class DecisionTree_Head(ClassificationHead):
 
     def __init__(self):
         super().__init__()
-        pass
+        self.model = DecisionTreeClassifier()
 
     def get_logits(self, query_features):
-        pass
+        y_test = query_features.detach().numpy()
+        scores_raw = self.model.decision_function(y_test)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
 
     def fit(self, support_features, support_labels):
-        pass
+        X_train = support_features.detach().numpy()
+        y_train = support_labels.detach().numpy()
+
+        self.model.fit(X_train, y_train)
 
 
 class RandomForest_Head(ClassificationHead):
     def __init__(self):
         super().__init__()
-        pass
+        self.model = RandomForestClassifier()
 
     def get_logits(self, query_features):
-        pass
+        y_test = query_features.detach().numpy()
+        scores_raw = self.model.decision_function(y_test)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
 
     def fit(self, support_features, support_labels):
-        pass
+        X_train = support_features.detach().numpy()
+        y_train = support_labels.detach().numpy()
+
+        self.model.fit(X_train, y_train)
 
 
 class LogisticRegression_Head(ClassificationHead):
     def __init__(self):
         super().__init__()
-        pass
+        raise NotImplementedError
 
     def get_logits(self, query_features):
-        pass
+        raise NotImplementedError
 
     def fit(self, support_features, support_labels):
-        pass
+        raise NotImplementedError
 
 
 class KNN_Head(ClassificationHead):
     def __init__(self):
         super().__init__()
-        pass
+        raise NotImplementedError
 
     def get_logits(self, query_features):
-        pass
+        raise NotImplementedError
 
     def fit(self, support_features, support_labels):
-        pass
-
-
-class DecisionTree_Head(ClassificationHead):
-    def __init__(self):
-        super().__init__()
-        pass
-
-    def get_logits(self, query_features):
-        pass
-
-    def fit(self, support_features, support_labels):
-        pass
+        raise NotImplementedError
 
 
 class NaiveBayes_Head(ClassificationHead):
     """
     Naive Bayes classification head.
     """
+
     def __init__(self):
         super().__init__()
         self.model = GaussianNB()
@@ -202,10 +202,40 @@ class NaiveBayes_Head(ClassificationHead):
 class GMM_Head(ClassificationHead):
     def __init__(self):
         super().__init__()
-        pass
+        raise NotImplementedError
 
     def get_logits(self, query_features):
-        pass
+        raise NotImplementedError
 
     def fit(self, support_features, support_labels):
-        pass
+        raise NotImplementedError
+
+
+##########################################
+#                                        #
+# Classification heads: Neural Networks  #
+#                                        #
+##########################################
+
+
+class NN_Head(ClassificationHead):
+    """
+    Multi-class Neural Network classification head.
+    """
+
+    def __init__(self):
+        super().__init__()
+        raise NotImplementedError
+
+    def get_logits(self, query_features):
+        raise NotImplementedError
+
+    def fit(self, support_features, support_labels):
+        raise NotImplementedError
+
+
+def basic_testing():
+    raise NotImplementedError
+
+if __name__ == "__main__":
+    basic_testing()
