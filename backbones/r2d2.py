@@ -1,1 +1,1 @@
-# See implementation from metaOptNet
+# See implementation from metaOptNet https://github.com/kjunelee/MetaOptNet/blob/master/models/R2D2_embedding.py
