@@ -8,7 +8,6 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
-
 class ClassificationHead(nn.Module):
     def __init__(self):
         """
@@ -42,9 +41,28 @@ class ClassificationHead(nn.Module):
 
         Args:
             support_features (tensor): Tensor of shape (n_way * n_support, feat_dim)
-            support_labels (_type_): Tensor of shape (n_way * n_support, 1)
+            support_labels (_type_): Tensor of shape (n_way * n_support)
         """
         pass
+    
+    def get_logit_from_probs(self, probabilities):
+        """
+        Get the logits from the probabilities. 
+        Many sklearn models do not return logits, but probabilities. 
+        This method should be used to transform the probabilities into logits.
+        
+        Given a probabiliti p e (0, 1), the logit is defined as:
+        logit(p) = log(p / (1 - p)
+        As per: https://en.wikipedia.org/wiki/Logit
+        
+        Args:
+            probabilities (np.array): np.array of shape (n_way * size, n_way)
+
+        Returns:
+            np.array: np.array of shape (n_way * size, n_way), representing the logits.
+        """
+        print("Warning: get_logit_from_probs is probably not correct.")
+        return np.log(probabilities / (1.0001 - probabilities))
 
 
 ######################################################################
@@ -73,8 +91,8 @@ class SVM_Head(ClassificationHead):
         self.model = svm.SVC(kernel=kernel, C=C, probability=probability)
 
     def get_logits(self, query_features):
-        y_test = query_features.detach().numpy()
-        scores_raw = self.model.decision_function(y_test)
+        x_test = query_features.detach().numpy()
+        scores_raw = self.model.decision_function(x_test)
 
         # Transform to trainable tensor:
         scores = torch.from_numpy(scores_raw)
@@ -84,7 +102,6 @@ class SVM_Head(ClassificationHead):
     def fit(self, support_features, support_labels):
         X_train = support_features.detach().numpy()
         y_train = support_labels.detach().numpy()
-
         self.model.fit(X_train, y_train)
 
 
@@ -114,9 +131,12 @@ class DecisionTree_Head(ClassificationHead):
         self.model = DecisionTreeClassifier()
 
     def get_logits(self, query_features):
-        y_test = query_features.detach().numpy()
-        scores_raw = self.model.decision_function(y_test)
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test))
 
+        # Generate logits from probabilities:
+        scores_raw = self.get_logit_from_probs(probabilities)
+        
         # Transform to trainable tensor:
         scores = torch.from_numpy(scores_raw)
 
@@ -184,9 +204,12 @@ class NaiveBayes_Head(ClassificationHead):
         self.model = GaussianNB()
 
     def get_logits(self, query_features):
-        y_test = query_features.detach().numpy()
-        scores_raw = self.model.decision_function(y_test)
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test))
 
+        # Generate logits from probabilities:
+        scores_raw = self.get_logit_from_probs(probabilities)
+        
         # Transform to trainable tensor:
         scores = torch.from_numpy(scores_raw)
 
@@ -200,9 +223,10 @@ class NaiveBayes_Head(ClassificationHead):
 
 
 class GMM_Head(ClassificationHead):
-    def __init__(self):
+    def __init__(self, covar_type='full'):
         super().__init__()
-        raise NotImplementedError
+        self.nway = ...
+        self.model = GMM(n_components=self.nway,covariance_type=covar_type, init_params='wc', n_iter=20)
 
     def get_logits(self, query_features):
         raise NotImplementedError
@@ -218,7 +242,7 @@ class GMM_Head(ClassificationHead):
 ##########################################
 
 
-class NN_Head(ClassificationHead):
+class MLP_Head(ClassificationHead):
     """
     Multi-class Neural Network classification head.
     """
@@ -234,8 +258,50 @@ class NN_Head(ClassificationHead):
         raise NotImplementedError
 
 
-def basic_testing():
-    raise NotImplementedError
 
 if __name__ == "__main__":
-    basic_testing()
+    print("==== Generating random data =====")
+    
+    n_way = 5
+    n_query = 15
+    n_support = 5
+    emb_dim = 512
+    
+    z_support = torch.rand(n_way * n_support, emb_dim)
+    print(f"z_support shape: ", z_support.shape)
+    
+    z_query = torch.rand(n_way * n_query, emb_dim)
+    print(f"z_query shape: ", z_query.shape)
+    
+    z_labels = torch.from_numpy(np.repeat(range(n_way), n_support))
+    print(f"z_labels shape: ", z_labels.shape)
+    
+    z_query_labels = torch.from_numpy(np.repeat(range(n_way), n_query))
+    print(f"z_query_labels shape: ", z_query_labels.shape)
+    
+    print("\n==== Testing heads =====")
+    
+    # Decision Tree Head
+    head = DecisionTree_Head()
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for Decision Tree logits."
+    
+    # Naive Bayes Head
+    head = NaiveBayes_Head()
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for Naive Bayes logits."
+    print(">>Naive Bayes Ok!")
+        
+    # SVM Head
+    head = SVM_Head()
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for SVM logits."
+    print(">>SVM Ok!")
+
+
+    
+    
+    
