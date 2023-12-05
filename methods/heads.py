@@ -308,8 +308,7 @@ class MLP_Head(ClassificationHead):
 
     def train(self, support_features, support_labels):
         dataset = TensorDataset(support_features, support_labels)
-        loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True
-)
+        loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
         for epoch in range(self.epochs):
             self.train()
