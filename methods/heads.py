@@ -11,7 +11,17 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 class ClassificationHead(nn.Module):
-    def __init__(self):
+    """
+    Abstract class for classification heads.
+    It is not necessary to be a nn.Module, but it is useful for the training loop when creating neural networks.
+    """
+    
+    def __init__(
+        self,
+        n_way,
+        feat_dim,
+        seed=42,
+    ):
         """
         Instanciate a classification head model. Classification heads are used in the Meta-training loop to calculate the logits for the query set.
 
@@ -20,9 +30,19 @@ class ClassificationHead(nn.Module):
         Classification heads should be compatible with BioMetaOptNet, and should implement the following methods:
         - get_logits(self, query_features): Get the logits for the query set.
         - fit(self, support_features, support_labels): Fit the support set to the support labels.
+        - _get_logit_from_probs(self, probabilities): Get the logits from the probabilities. Protected method.
+        - test(self, X_test, y_test): Test the performance of the classifier.
+        
+        n_way (int): Number of classes in the classification task.
+        feat_dim (int): Dimension of the feature vectors.
+        seed (int, optional): Random seed. Defaults to 42.
         """
         super(ClassificationHead, self).__init__()
-        pass
+        
+        self.n_way = n_way
+        self.feat_dim = feat_dim
+        self.seed = seed
+        
 
     def get_logits(self, query_features):
         """
@@ -47,14 +67,14 @@ class ClassificationHead(nn.Module):
         """
         pass
 
-    def get_logit_from_probs(self, probabilities):
+    def _get_logit_from_probs(self, probabilities):
         """
         Get the logits from the probabilities.
         Many sklearn models do not return logits, but probabilities.
         This method should be used to transform the probabilities into logits.
 
         Given a probabiliti p e (0, 1), the logit is defined as:
-        logit(p) = log(p / (1 - p)
+        logit(p) = log(p / (1 - p))
         As per: https://en.wikipedia.org/wiki/Logit
 
         Args:
@@ -65,6 +85,18 @@ class ClassificationHead(nn.Module):
         """
         print("Warning: get_logit_from_probs is probably not correct.")
         return np.log(probabilities / (1.0001 - probabilities))
+    
+    def test(self, X_test, y_test):
+        """
+        Test the performance of the classifier.
+        It should return a tuple (loss, accuracy, ...).
+        
+        Args:
+            X_test (tensor): Input tensor of shape (n_way * n_query, feat_dim)
+            y_test (tensor): Labels tensor of shape (n_way * n_query) 
+        """
+        pass
+        
 
 
 ######################################################################
@@ -78,8 +110,8 @@ class SVM_Head(ClassificationHead):
     """
     Multi-class Support Vector Machine classification head.
     """
-
-    def __init__(self, kernel="linear", C=1, probability=True):
+        
+    def __init__(self, n_way, feat_dim, seed, kernel="linear", C=1, probability=True):
         """
         Instanciate a SVM classification head model.
 
@@ -88,7 +120,7 @@ class SVM_Head(ClassificationHead):
             C (int, optional): L2-Regularization parameter. Defaults to 1.
             probability (bool, optional): _description_. Defaults to True.
         """
-        super().__init__()
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
 
         self.model = svm.SVC(kernel=kernel, C=C, probability=probability)
 
@@ -257,7 +289,8 @@ class MLP_Head(ClassificationHead):
     def __init__(
         self,
         n_way,
-        input_dim,
+        feat_dim,
+        seed=42,
         hidden_dims=[],
         activations=None,
         dropouts=None,
@@ -267,35 +300,33 @@ class MLP_Head(ClassificationHead):
         batch_size=32,
         device="cpu",
     ):
-        super().__init__()
-        self.n_way = n_way
-        self.input_dim = input_dim
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+
         self.hidden_dims = hidden_dims
         self.output_dim = n_way
         self.lr = lr
         self.weight_decay = weight_decay
         self.epochs = epochs
         self.batch_size = batch_size
-
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.lr, weight_decay=self.weight_decay
-        )
+        self.device = device
 
         self.network = nn.Sequential()
 
-        curr_size = input_dim
+        curr_size = feat_dim
         for i, hidden_dim in enumerate(hidden_dims):
             self.network.append(nn.Linear(curr_size, hidden_dim))
 
-            if activations is not None:
+            if activations is not None and activations[i] is not None:
                 self.network.append(activations[i])
-            if dropouts is not None:
+
+            if dropouts is not None and dropouts[i] is not None:
                 self.network.append(nn.Dropout(dropouts[i]))
 
             curr_size = hidden_dim
 
         self.network.append(nn.Linear(curr_size, self.output_dim))
+
+        self.to(device)
 
     def forward(self, x):
         return self.network(x)
@@ -304,32 +335,72 @@ class MLP_Head(ClassificationHead):
         return self.forward(query_features)
 
     def fit(self, support_features, support_labels):
-        self.train(support_features, support_labels)
+        self.train_model(support_features, support_labels)
 
-    def train(self, support_features, support_labels):
+    def train_model(self, support_features, support_labels):
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(
+            self.parameters(), lr=self.lr, weight_decay=self.weight_decay
+        )
+
         dataset = TensorDataset(support_features, support_labels)
-        loader = torch.utils.data.DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
+        loader = torch.utils.data.DataLoader(
+            dataset, batch_size=self.batch_size, shuffle=True
+        )
 
         for epoch in range(self.epochs):
             self.train()
-            for i, (X, y) in loader:
-                X = ...
-                y = ...
-                self.train_epoch(X, y)
+            for X, y in loader:
+                loss = self.train_epoch(X, y)
+                #print(loss)
+
+        t_loss, t_acc = self.test(support_features, support_labels)
+
+        return t_loss, t_acc
 
     def train_epoch(self, X, y):
         self.optimizer.zero_grad()
+
         logits = self.forward(X)
         loss = self.criterion(logits, y)
         loss.backward()
+
         self.optimizer.step()
+
+        return loss.item()
+
+    def test(self, X_test, y_test):
+        dataset = TensorDataset(X_test, y_test)
+        loader = torch.utils.data.DataLoader(
+            dataset, batch_size=self.batch_size, shuffle=False
+        )
+
+        self.eval()
+
+        total_loss = 0
+        true_labels = []
+        predicted_labels = []
+        with torch.no_grad():
+            for X, y in loader:
+                logits = self.forward(X)
+                loss = self.criterion(logits, y)
+                total_loss += loss.item()
+
+                pred_class = torch.argmax(logits, dim=1)
+                predicted_labels += list(pred_class.cpu().numpy())
+                true_labels += list(y.cpu().numpy())
+
+        f_loss = total_loss / len(loader)
+        f_acc = np.mean(np.array(predicted_labels) == np.array(true_labels))
+
+        return f_loss, f_acc
 
 
 if __name__ == "__main__":
     print("==== Generating random data =====")
 
     n_way = 5
-    n_query = 15
+    n_query = 10
     n_support = 5
     emb_dim = 512
 
@@ -347,22 +418,40 @@ if __name__ == "__main__":
 
     print("\n==== Testing heads =====")
 
-    # Decision Tree Head
-    head = DecisionTree_Head()
+    # MLP Head
+    head = MLP_Head(
+        n_way,
+        emb_dim,
+        epochs=5,
+        hidden_dims=[512, 256, 64, 32],
+        dropouts=[0.4, 0.4, 0.4, 0.4],
+        activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()],
+        device="cpu",
+    )
+    
     head.fit(z_support, z_labels)
     logits = head.get_logits(z_query)
-    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for DecTree logits."
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for MLP logits."
+    print(">>MLP Ok!")
 
-    # Naive Bayes Head
-    head = NaiveBayes_Head()
-    head.fit(z_support, z_labels)
-    logits = head.get_logits(z_query)
-    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for NB logits."
-    print(">>Naive Bayes Ok!")
-
-    # SVM Head
-    head = SVM_Head()
+    #SVM Head
+    head = SVM_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
     head.fit(z_support, z_labels)
     logits = head.get_logits(z_query)
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for SVM logits."
     print(">>SVM Ok!")
+    
+    # Decision Tree Head
+    # head = DecisionTree_Head()
+    # head.fit(z_support, z_labels)
+    # logits = head.get_logits(z_query)
+    # assert logits.shape == (n_way * n_query, n_way), "Wrong shape for DecTree logits."
+
+    # Naive Bayes Head
+    # head = NaiveBayes_Head()
+    # head.fit(z_support, z_labels)
+    # logits = head.get_logits(z_query)
+    # assert logits.shape == (n_way * n_query, n_way), "Wrong shape for NB logits."
+    # print(">>Naive Bayes Ok!")
+
+    
