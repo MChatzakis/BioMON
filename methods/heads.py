@@ -460,6 +460,46 @@ class LogisticRegression_Head(TorchClassificationHead):
         return torch.sigmoid(self.model(x))
 
 
+##############################
+#                            #
+# Dispatcher and other utils #
+#                            #
+##############################
+
+# Note: When adding a new model, be sure to update the dispatcher.
+DISPATCHER ={
+    "MLP": MLP_Head,
+    "LogisticRegression": LogisticRegression_Head,
+    "SVM": SVM_Head,
+    "NaiveBayes": NaiveBayes_Head,
+    "KNN": KNN_Head,
+    "DecisionTree": DecisionTree_Head,
+    "RandomForest": RandomForest_Head,
+    "GMM": GMM_Head,
+}
+
+def to_torch(x, requires_grad=True):
+    """
+    Transform a numpy array to a torch tensor.
+    
+    Args:
+        x (np.array): Numpy array to transform.
+
+    Returns:
+        Tensor: Pytorch tensor.
+    """
+    
+    ten = torch.from_numpy(x)
+    ten.requires_grad = True
+    #Variable(y_query.cuda()) # deprecated
+    return ten
+
+##########################################
+#                                        #
+# Classification heads: Neural Networks  #
+#                                        #
+##########################################
+
 if __name__ == "__main__":
     print("==== Generating random data =====")
 

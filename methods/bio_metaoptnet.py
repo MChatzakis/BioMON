@@ -4,15 +4,25 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from methods.meta_template import MetaTemplate
-from methods.heads import ClassificationHead, head_fit
-
+from methods.heads import *
 
 class BioMetaOptNet(MetaTemplate):
     """
     BioMetaOptNet is a MetaOptNet variant for Biomedical data collections.
     """
 
-    def __init__(self, backbone, head_model_params, n_way, n_support):
+    def __init__(self, backbone, n_way, n_support, head_model_params):
+        """
+        Initialize BioMetaOptNet model.
+
+        Args:
+            backbone (model): Backbone model to use for feature extraction.
+            n_way (int): Number of classes per task.
+            n_support (int): Number of support samples per class.
+            head_model_params (dict): Dictionary of parameters for the head model.
+
+        """
+        
         super(BioMetaOptNet, self).__init__(backbone, n_way, n_support)
         self.loss_fn = nn.CrossEntropyLoss()
         self.feature = backbone
@@ -21,7 +31,25 @@ class BioMetaOptNet(MetaTemplate):
         self.head_model_params = head_model_params
 
     def initialize_model(self) -> ClassificationHead:
-        raise NotImplementedError
+        """
+        Initialize the classification head model.
+        
+        It is based on the model specified in the head_model_params dictionary, with the following format:
+        {
+            "model": model name,
+            "args": {
+                "input_dim": self.feature.final_feat_dim,
+                "hidden_dim": 64,
+                "output_dim": self.n_way,
+                ...
+            },
+        }
+
+        Returns:
+            ClassificationHead: A new instance of the classification head model.
+        """
+        args = self.head_model_params
+        return DISPATCHER[args["model"]](**args["args"])
 
     def set_forward(self, x, is_feature=False):
         z_support, z_query = self.parse_feature(x, is_feature)
@@ -31,7 +59,7 @@ class BioMetaOptNet(MetaTemplate):
 
         z_support_labels = torch.from_numpy(np.repeat(range(self.n_way), self.n_support))
 
-        head = self.initialize_model()  # todo
+        head = self.initialize_model()
         head.fit(z_support, z_support_labels)
 
         scores = head.get_logits(z_query)
