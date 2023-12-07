@@ -13,7 +13,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
 
 
-
 ###########################################################
 #                                                         #
 # Class protypes and definitions for classification heads #
@@ -220,7 +219,16 @@ class ClassicClassificationHead(ClassificationHead):
         self.model = None
 
     def get_logits(self, query_features):
-        pass
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test)) + 0.00000001
+
+        # Generate logits from probabilities:
+        scores_raw = self._get_logit_from_probs(probabilities)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
 
     def fit(self, support_features, support_labels):
         X_train = support_features.detach().numpy()
@@ -277,18 +285,6 @@ class NaiveBayes_Head(ClassicClassificationHead):
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=42)
         self.model = GaussianNB()
 
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test))
-
-        # Generate logits from probabilities:
-        scores_raw = self._get_logit_from_probs(probabilities)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
-
 
 class KNN_Head(ClassicClassificationHead):
     def __init__(self, n_way, feat_dim, seed=42, n_neighbors=3):
@@ -296,18 +292,6 @@ class KNN_Head(ClassicClassificationHead):
 
         self.n_neighbors = n_neighbors
         self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
-
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test))
-
-        # Generate logits from probabilities:
-        scores_raw = self._get_logit_from_probs(probabilities)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
 
 
 class DecisionTree_Head(ClassicClassificationHead):
@@ -319,40 +303,21 @@ class DecisionTree_Head(ClassicClassificationHead):
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = DecisionTreeClassifier(random_state=seed)
 
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test))
-
-        # Generate logits from probabilities:
-        scores_raw = self._get_logit_from_probs(probabilities)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
-
 
 class RandomForest_Head(ClassicClassificationHead):
     def __init__(self, n_way, feat_dim, seed=42, n_estimators=100):
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = RandomForestClassifier(n_estimators=n_estimators)
 
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test))
-
-        # Generate logits from probabilities:
-        scores_raw = self._get_logit_from_probs(probabilities)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
-
 
 class GMM_Head(ClassicClassificationHead):
     def __init__(
-        self, n_way, feat_dim, seed, covar_type="full", init_params="kmeans",
+        self,
+        n_way,
+        feat_dim,
+        seed,
+        covar_type="full",
+        init_params="kmeans",
     ):
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = mixture.GaussianMixture(
@@ -360,9 +325,6 @@ class GMM_Head(ClassicClassificationHead):
             covariance_type=covar_type,
             init_params=init_params,
         )
-
-    def get_logits(self, query_features):
-        raise NotImplementedError
 
     def test(self, X_test, y_test):
         X_test = X_test.detach().numpy()
@@ -375,20 +337,7 @@ class GMM_Head(ClassicClassificationHead):
 
     def fit(self, support_features, support_labels):
         X_train = support_features.detach().numpy()
-        y_train = support_labels.detach().numpy()
         self.model.fit(X_train)
-        
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test))
-
-        # Generate logits from probabilities:
-        scores_raw = self._get_logit_from_probs(probabilities)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
 
 
 ##########################################
@@ -587,7 +536,7 @@ if __name__ == "__main__":
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for RF logits."
     print(f"RF test: {head.test(z_query, z_query_labels)}")
     print(">>RF Ok!\n")
-    
+
     # GMM
     head = GMM_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
     head.fit(z_support, z_labels)
@@ -595,4 +544,3 @@ if __name__ == "__main__":
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for GMM logits."
     print(f"GMM test: {head.test(z_query, z_query_labels)}")
     print(">>GMM Ok!\n")
-    
