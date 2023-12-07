@@ -339,6 +339,36 @@ def full_block(in_features, out_features, dropout):
         nn.Dropout(p=dropout),
     )
 
+def r2d2_block(in_features, out_features, keep_activation=True, dropout=True):
+
+    r2d2_layers = [ 
+        nn.Conv2d(in_features, out_features,kernel_size=3,padding=1),
+        nn.BatchNorm2d(out_features),
+        nn.MaxPool2d(2)
+    ]
+    if keep_activation:
+      r2d2_layers.append(nn.LeakyReLU(0.1))
+    
+    if dropout:
+      r2d2_layers.append(nn.Dropout(0.3))
+
+    return nn.Sequentila(*r2d2_layers)
+
+def r2d2_block_fw(in_features, out_features, keep_activation=True, dropout=True):
+
+    r2d2_layers = [ 
+        nn.Conv2d_fw(in_features, out_features,kernel_size=3,padding=1),
+        nn.BatchNorm2d_fw(out_features),
+        nn.MaxPool2d(2)
+    ]
+    if keep_activation:
+      r2d2_layers.append(nn.LeakyReLU(0.1))
+    
+    if dropout:
+      r2d2_layers.append(nn.Dropout(0.3))
+
+    return nn.Sequentila(*r2d2_layers)
+
 
 def glorot(tensor):
     if tensor is not None:
