@@ -5,17 +5,27 @@ from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
 
 from sklearn import svm
+from sklearn import mixture
+
 from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 
 
-class ClassificationHead(nn.Module):
+
+###########################################################
+#                                                         #
+# Class protypes and definitions for classification heads #
+#                                                         #
+###########################################################
+
+
+class ClassificationHead:
     """
     Abstract class for classification heads.
-    It is not necessary to be a nn.Module, but it is useful for the training loop when creating neural networks.
     """
-    
+
     def __init__(
         self,
         n_way,
@@ -32,17 +42,16 @@ class ClassificationHead(nn.Module):
         - fit(self, support_features, support_labels): Fit the support set to the support labels.
         - _get_logit_from_probs(self, probabilities): Get the logits from the probabilities. Protected method.
         - test(self, X_test, y_test): Test the performance of the classifier.
-        
+
         n_way (int): Number of classes in the classification task.
         feat_dim (int): Dimension of the feature vectors.
         seed (int, optional): Random seed. Defaults to 42.
         """
         super(ClassificationHead, self).__init__()
-        
+
         self.n_way = n_way
         self.feat_dim = feat_dim
         self.seed = seed
-        
 
     def get_logits(self, query_features):
         """
@@ -84,264 +93,66 @@ class ClassificationHead(nn.Module):
             np.array: np.array of shape (n_way * size, n_way), representing the logits.
         """
         print("Warning: get_logit_from_probs is probably not correct.")
-        #return np.log(probabilities / (1.0001 - probabilities))
+        # return np.log(probabilities / (1.0001 - probabilities))
         return np.log(probabilities)
-    
+
     def test(self, X_test, y_test):
         """
         Test the performance of the classifier.
         It should return a tuple (loss, accuracy, ...).
-        
+
         Args:
             X_test (tensor): Input tensor of shape (n_way * n_query, feat_dim)
-            y_test (tensor): Labels tensor of shape (n_way * n_query) 
+            y_test (tensor): Labels tensor of shape (n_way * n_query)
         """
         pass
-        
 
 
-######################################################################
-#                                                                    #
-# Classification heads: Classic Algorithms implemented with sklearn  #
-#                                                                    #
-######################################################################
-
-
-class SVM_Head(ClassificationHead):
+class TorchClassificationHead(ClassificationHead, nn.Module):
     """
-    Multi-class Support Vector Machine classification head.
+    Torch classification head used mostly for Neural Network classifiers.
+    It inherits from both ClassificationHead and nn.Module.
     """
-        
-    def __init__(self, n_way, feat_dim, seed, kernel="linear", C=1, probability=True):
+
+    def __init__(self, n_way, feat_dim, seed=42, batch_size=32, epochs=2, device="cpu"):
         """
-        Instanciate a SVM classification head model.
+        Instanciate a Torch classification head model.
+
+        This is meant to be an abstract class, and should not be instanciated directly.
 
         Args:
-            kernel (str, optional): Which kernel to be used (linear, poly, sigmoid, ...). Defaults to 'linear'.
-            C (int, optional): L2-Regularization parameter. Defaults to 1.
-            probability (bool, optional): _description_. Defaults to True.
+            n_way (int): Number of classes in the classification task.
+            feat_dim (int): Dimension of the feature vectors.
+            seed (int, optional): Seed for training. Defaults to 42.
         """
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
-
-        self.model = svm.SVC(kernel=kernel, C=C, probability=probability)
-
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        scores_raw = self.model.decision_function(x_test)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
-
-    def fit(self, support_features, support_labels):
-        X_train = support_features.detach().numpy()
-        y_train = support_labels.detach().numpy()
-        self.model.fit(X_train, y_train)
-
-
-class RR_Head(ClassificationHead):
-    """
-    Ridge Regression classification head.
-    """
-
-    def __init__(self):
-        super().__init__()
-        raise NotImplementedError
-
-    def get_logits(self, query_features):
-        raise NotImplementedError
-
-    def fit(self, support_features, support_labels):
-        raise NotImplementedError
-
-
-class DecisionTree_Head(ClassificationHead):
-    """
-    Decision Tree classification head.
-    """
-
-    def __init__(self):
-        super().__init__()
-        self.model = DecisionTreeClassifier()
-
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test))
-
-        # Generate logits from probabilities:
-        scores_raw = self.get_logit_from_probs(probabilities)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
-
-    def fit(self, support_features, support_labels):
-        X_train = support_features.detach().numpy()
-        y_train = support_labels.detach().numpy()
-
-        self.model.fit(X_train, y_train)
-
-
-class RandomForest_Head(ClassificationHead):
-    def __init__(self):
-        super().__init__()
-        self.model = RandomForestClassifier()
-
-    def get_logits(self, query_features):
-        y_test = query_features.detach().numpy()
-        scores_raw = self.model.decision_function(y_test)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
-
-    def fit(self, support_features, support_labels):
-        X_train = support_features.detach().numpy()
-        y_train = support_labels.detach().numpy()
-
-        self.model.fit(X_train, y_train)
-
-
-class LogisticRegression_Head(ClassificationHead):
-    def __init__(self):
-        super().__init__()
-        raise NotImplementedError
-
-    def get_logits(self, query_features):
-        raise NotImplementedError
-
-    def fit(self, support_features, support_labels):
-        raise NotImplementedError
-
-
-class KNN_Head(ClassificationHead):
-    def __init__(self):
-        super().__init__()
-        raise NotImplementedError
-
-    def get_logits(self, query_features):
-        raise NotImplementedError
-
-    def fit(self, support_features, support_labels):
-        raise NotImplementedError
-
-
-class NaiveBayes_Head(ClassificationHead):
-    """
-    Naive Bayes classification head.
-    """
-
-    def __init__(self, n_way, feat_dim, seed=42):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=42)
-        self.model = GaussianNB()
-
-    def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test))
-
-        # Generate logits from probabilities:
-        scores_raw = self._get_logit_from_probs(probabilities)
-
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
-        return scores
-
-    def fit(self, support_features, support_labels):
-        X_train = support_features.detach().numpy()
-        y_train = support_labels.detach().numpy()
-        self.model.fit(X_train, y_train)
-
-
-class GMM_Head(ClassificationHead):
-    def __init__(self, covar_type="full"):
-        super().__init__()
-        self.nway = ...
-        self.model = GMM(
-            n_components=self.nway,
-            covariance_type=covar_type,
-            init_params="wc",
-            n_iter=20,
-        )
-
-    def get_logits(self, query_features):
-        raise NotImplementedError
-
-    def fit(self, support_features, support_labels):
-        raise NotImplementedError
-
-
-##########################################
-#                                        #
-# Classification heads: Neural Networks  #
-#                                        #
-##########################################
-
-
-class MLP_Head(ClassificationHead):
-    """
-    Multi-class Neural Network classification head.
-    """
-
-    def __init__(
-        self,
-        n_way,
-        feat_dim,
-        seed=42,
-        hidden_dims=[],
-        activations=None,
-        dropouts=None,
-        epochs=10,
-        lr=0.001,
-        weight_decay=0.00001,
-        batch_size=32,
-        device="cpu",
-    ):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
-
-        self.hidden_dims = hidden_dims
-        self.output_dim = n_way
-        self.lr = lr
-        self.weight_decay = weight_decay
-        self.epochs = epochs
         self.batch_size = batch_size
+        self.epochs = epochs
         self.device = device
 
-        self.network = nn.Sequential()
+        self.final_train_loss = None
+        self.final_train_acc = None
 
-        curr_size = feat_dim
-        for i, hidden_dim in enumerate(hidden_dims):
-            self.network.append(nn.Linear(curr_size, hidden_dim))
-
-            if activations is not None and activations[i] is not None:
-                self.network.append(activations[i])
-
-            if dropouts is not None and dropouts[i] is not None:
-                self.network.append(nn.Dropout(dropouts[i]))
-
-            curr_size = hidden_dim
-
-        self.network.append(nn.Linear(curr_size, self.output_dim))
-
-        self.to(device)
+        self.criterion = None
+        self.optimizer = None
 
     def forward(self, x):
-        return self.network(x)
+        """
+        Forward pass through the model.
 
-    def get_logits(self, query_features):
-        return self.forward(query_features)
-
-    def fit(self, support_features, support_labels):
-        self.train_model(support_features, support_labels)
+        Args:
+            x (tensor): Tensor of shape (n_way * n_{query,support}, feat_dim)
+        """
+        pass
 
     def train_model(self, support_features, support_labels):
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(
-            self.parameters(), lr=self.lr, weight_decay=self.weight_decay
-        )
+        """
+        Complete training routine for the head model.
+
+        Args:
+            support_features (tensor): Tensor of shape (n_way * n_support, feat_dim)
+            support_labels (tensor): Tensor of shape (n_way * n_support)
+        """
 
         dataset = TensorDataset(support_features, support_labels)
         loader = torch.utils.data.DataLoader(
@@ -351,23 +162,20 @@ class MLP_Head(ClassificationHead):
         for epoch in range(self.epochs):
             self.train()
             for X, y in loader:
-                loss = self.train_epoch(X, y)
-                #print(loss)
+                self.optimizer.zero_grad()
+
+                logits = self.forward(X)
+                loss = self.criterion(logits, y)
+                loss.backward()
+
+                self.optimizer.step()
 
         t_loss, t_acc = self.test(support_features, support_labels)
 
+        self.final_train_acc = t_acc
+        self.final_train_loss = t_loss
+
         return t_loss, t_acc
-
-    def train_epoch(self, X, y):
-        self.optimizer.zero_grad()
-
-        logits = self.forward(X)
-        loss = self.criterion(logits, y)
-        loss.backward()
-
-        self.optimizer.step()
-
-        return loss.item()
 
     def test(self, X_test, y_test):
         dataset = TensorDataset(X_test, y_test)
@@ -395,6 +203,292 @@ class MLP_Head(ClassificationHead):
 
         return f_loss, f_acc
 
+    def get_logits(self, query_features):
+        return self.forward(query_features)
+
+    def fit(self, support_features, support_labels):
+        self.train_model(support_features, support_labels)
+
+
+class ClassicClassificationHead(ClassificationHead):
+    """
+    Classic classification head.
+    """
+
+    def __init__(self, n_way, feat_dim, seed=42):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        self.model = None
+
+    def get_logits(self, query_features):
+        pass
+
+    def fit(self, support_features, support_labels):
+        X_train = support_features.detach().numpy()
+        y_train = support_labels.detach().numpy()
+        self.model.fit(X_train, y_train)
+
+    def test(self, X_test, y_test):
+        X_test = X_test.detach().numpy()
+        y_test = y_test.detach().numpy()
+        return (-1, self.model.score(X_test, y_test))
+
+
+######################################################################
+#                                                                    #
+# Classification heads: Classic Algorithms implemented with sklearn  #
+#                                                                    #
+######################################################################
+
+
+class SVM_Head(ClassicClassificationHead):
+    """
+    Multi-class Support Vector Machine classification head.
+    """
+
+    def __init__(self, n_way, feat_dim, seed, kernel="linear", C=1, probability=True):
+        """
+        Instanciate a SVM classification head model.
+
+        Args:
+            kernel (str, optional): Which kernel to be used (linear, poly, sigmoid, ...). Defaults to 'linear'.
+            C (int, optional): L2-Regularization parameter. Defaults to 1.
+            probability (bool, optional): _description_. Defaults to True.
+        """
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+
+        self.model = svm.SVC(kernel=kernel, C=C, probability=probability)
+
+    def get_logits(self, query_features):
+        x_test = query_features.detach().numpy()
+        scores_raw = self.model.decision_function(x_test)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
+
+
+class NaiveBayes_Head(ClassicClassificationHead):
+    """
+    Naive Bayes classification head.
+    """
+
+    def __init__(self, n_way, feat_dim, seed=42):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=42)
+        self.model = GaussianNB()
+
+    def get_logits(self, query_features):
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test))
+
+        # Generate logits from probabilities:
+        scores_raw = self._get_logit_from_probs(probabilities)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
+
+
+class KNN_Head(ClassicClassificationHead):
+    def __init__(self, n_way, feat_dim, seed=42, n_neighbors=3):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+
+        self.n_neighbors = n_neighbors
+        self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
+
+    def get_logits(self, query_features):
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test))
+
+        # Generate logits from probabilities:
+        scores_raw = self._get_logit_from_probs(probabilities)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
+
+
+class DecisionTree_Head(ClassicClassificationHead):
+    """
+    Decision Tree classification head.
+    """
+
+    def __init__(self, n_way, feat_dim, seed=42):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        self.model = DecisionTreeClassifier(random_state=seed)
+
+    def get_logits(self, query_features):
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test))
+
+        # Generate logits from probabilities:
+        scores_raw = self._get_logit_from_probs(probabilities)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
+
+
+class RandomForest_Head(ClassicClassificationHead):
+    def __init__(self, n_way, feat_dim, seed=42, n_estimators=100):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        self.model = RandomForestClassifier(n_estimators=n_estimators)
+
+    def get_logits(self, query_features):
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test))
+
+        # Generate logits from probabilities:
+        scores_raw = self._get_logit_from_probs(probabilities)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
+
+
+class GMM_Head(ClassicClassificationHead):
+    def __init__(
+        self, n_way, feat_dim, seed, covar_type="full", init_params="kmeans",
+    ):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        self.model = mixture.GaussianMixture(
+            n_components=n_way,
+            covariance_type=covar_type,
+            init_params=init_params,
+        )
+
+    def get_logits(self, query_features):
+        raise NotImplementedError
+
+    def test(self, X_test, y_test):
+        X_test = X_test.detach().numpy()
+        y_test = y_test.detach().numpy()
+
+        y_test_pred = self.model.predict(X_test)
+        test_accuracy = np.mean(y_test_pred.ravel() == y_test.ravel())
+
+        return (-1, test_accuracy)
+
+    def fit(self, support_features, support_labels):
+        X_train = support_features.detach().numpy()
+        y_train = support_labels.detach().numpy()
+        self.model.fit(X_train)
+        
+    def get_logits(self, query_features):
+        x_test = query_features.detach().numpy()
+        probabilities = np.array(self.model.predict_proba(x_test))
+
+        # Generate logits from probabilities:
+        scores_raw = self._get_logit_from_probs(probabilities)
+
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
+
+
+##########################################
+#                                        #
+# Classification heads: Neural Networks  #
+#                                        #
+##########################################
+
+
+class MLP_Head(TorchClassificationHead):
+    """
+    Multi-class Neural Network classification head.
+    """
+
+    def __init__(
+        self,
+        n_way,
+        feat_dim,
+        seed=42,
+        batch_size=32,
+        device="cpu",
+        epochs=3,
+        hidden_dims=[],
+        activations=None,
+        dropouts=None,
+        lr=0.001,
+        weight_decay=0.00001,
+    ):
+        super().__init__(
+            n_way=n_way,
+            feat_dim=feat_dim,
+            seed=seed,
+            batch_size=batch_size,
+            epochs=epochs,
+            device=device,
+        )
+
+        self.hidden_dims = hidden_dims
+        self.output_dim = n_way
+        self.lr = lr
+        self.weight_decay = weight_decay
+        self.epochs = epochs
+        self.batch_size = batch_size
+        self.device = device
+
+        self.network = nn.Sequential()
+
+        curr_size = feat_dim
+        for i, hidden_dim in enumerate(hidden_dims):
+            self.network.append(nn.Linear(curr_size, hidden_dim))
+
+            if activations is not None and activations[i] is not None:
+                self.network.append(activations[i])
+
+            if dropouts is not None and dropouts[i] is not None:
+                self.network.append(nn.Dropout(dropouts[i]))
+
+            curr_size = hidden_dim
+
+        self.network.append(nn.Linear(curr_size, self.output_dim))
+        self.to(device)
+
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(
+            self.parameters(), lr=self.lr, weight_decay=self.weight_decay
+        )
+
+    def forward(self, x):
+        return self.network(x)
+
+
+class LogisticRegression_Head(TorchClassificationHead):
+    def __init__(
+        self,
+        n_way,
+        feat_dim,
+        seed=42,
+        batch_size=32,
+        device="cpu",
+        epochs=3,
+        lr=0.001,
+    ):
+        super().__init__(
+            n_way=n_way,
+            feat_dim=feat_dim,
+            seed=seed,
+            batch_size=batch_size,
+            epochs=epochs,
+            device=device,
+        )
+        self.lr = lr
+        self.model = nn.Linear(feat_dim, n_way)
+        self.to(device)
+
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.SGD(self.parameters(), lr=self.lr)
+
+    def forward(self, x):
+        return torch.sigmoid(self.model(x))
+
 
 if __name__ == "__main__":
     print("==== Generating random data =====")
@@ -420,39 +514,85 @@ if __name__ == "__main__":
 
     # MLP Head
     head = MLP_Head(
-        n_way,
-        emb_dim,
+        n_way=n_way,
+        feat_dim=emb_dim,
         seed=42,
-        epochs=5,
-        hidden_dims=[512, 256, 64, 32],
-        dropouts=[0.4, 0.4, 0.4, 0.4],
-        activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()],
+        batch_size=32,
         device="cpu",
+        epochs=500,
+        hidden_dims=[512, 256, 64, 32],
+        activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()],
+        dropouts=[0.4, 0.4, 0.4, 0.4],
+        lr=0.001,
+        weight_decay=0.00001,
     )
     head.fit(z_support, z_labels)
     logits = head.get_logits(z_query)
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for MLP logits."
-    print(">>MLP Ok!")
+    print(f"MLP test: {head.test(z_query, z_query_labels)}")
+    print(">>MLP Ok!\n")
 
-    #SVM Head
+    # Logistic Regression Head
+    head = LogisticRegression_Head(
+        n_way=n_way,
+        feat_dim=emb_dim,
+        seed=42,
+        batch_size=32,
+        device="cpu",
+        epochs=5,
+        lr=0.001,
+    )
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for LR logits."
+    print(f"LR test: {head.test(z_query, z_query_labels)}")
+    print(">>LR Ok!\n")
+
+    # SVM Head
     head = SVM_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
     head.fit(z_support, z_labels)
     logits = head.get_logits(z_query)
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for SVM logits."
-    print(">>SVM Ok!")
-    
+    print(f"SVM test: {head.test(z_query, z_query_labels)}")
+    print(">>SVM Ok!\n")
+
     # Decision Tree Head
-    # head = DecisionTree_Head()
-    # head.fit(z_support, z_labels)
-    # logits = head.get_logits(z_query)
-    # assert logits.shape == (n_way * n_query, n_way), "Wrong shape for DecTree logits."
+    head = DecisionTree_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for DecTree logits."
+    print(f"DecTree test: {head.test(z_query, z_query_labels)}")
+    print(">>DecTree Ok!\n")
 
     # Naive Bayes Head
     head = NaiveBayes_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
     head.fit(z_support, z_labels)
     logits = head.get_logits(z_query)
-    #print(logits)
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for NB logits."
-    print(">>Naive Bayes Ok!")
+    print(f"NB test: {head.test(z_query, z_query_labels)}")
+    print(">>Naive Bayes Ok!\n")
 
+    # KNN
+    head = KNN_Head(n_way=n_way, feat_dim=emb_dim, seed=42, n_neighbors=3)
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for KNN logits."
+    print(f"KNN test: {head.test(z_query, z_query_labels)}")
+    print(">>KNN Ok!\n")
+
+    # Random Forest
+    head = RandomForest_Head(n_way=n_way, feat_dim=emb_dim, seed=42, n_estimators=100)
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for RF logits."
+    print(f"RF test: {head.test(z_query, z_query_labels)}")
+    print(">>RF Ok!\n")
+    
+    # GMM
+    head = GMM_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for GMM logits."
+    print(f"GMM test: {head.test(z_query, z_query_labels)}")
+    print(">>GMM Ok!\n")
     
