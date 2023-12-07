@@ -103,12 +103,12 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         - train_model(self, support_features, support_labels): Complete training routine for the head model.
         - test(self, X_test, y_test): Test the performance of the classifier.
         - methods inherited from ClassificationHead
-        
+
         Additional args:
         - batch_size (int, optional): Batch size for training. Defaults to 32.
         - epochs (int, optional): Number of epochs for training. Defaults to 2.
         - device (str, optional): Device to use for training. Defaults to "cpu".
-            
+
         """
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.batch_size = batch_size
@@ -204,10 +204,10 @@ class ClassicClassificationHead(ClassificationHead):
         """
         Initialize a classic classification head model.
         This is meant to be an abstract class, and should not be instanciated directly.
-        
-        Classic models should be compatible with BioMetaOptNet, and most of them are implemented with sklearn.      
+
+        Classic models should be compatible with BioMetaOptNet, and most of them are implemented with sklearn.
         """
-        
+
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = None
 
@@ -249,13 +249,12 @@ class ClassicClassificationHead(ClassificationHead):
         Returns:
             np.array: np.array of shape (n_way * size, n_way), representing the logits.
         """
-        #print("Warning: get_logit_from_probs is probably not correct.")
-        #return np.log(probabilities)
+        # print("Warning: get_logit_from_probs is probably not correct.")
+        # return np.log(probabilities)
         c = 0.00000001
         nom = probabilities + c
         denom = 1 - probabilities + c
         return np.log(nom / denom)
-        
 
 
 ######################################################################
@@ -281,7 +280,9 @@ class SVM_Head(ClassicClassificationHead):
         """
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
 
-        self.model = svm.SVC(kernel=kernel, C=C, probability=probability, random_state=seed)
+        self.model = svm.SVC(
+            kernel=kernel, C=C, probability=probability, random_state=seed
+        )
 
     def get_logits(self, query_features):
         x_test = query_features.detach().numpy()
@@ -324,7 +325,9 @@ class DecisionTree_Head(ClassicClassificationHead):
 class RandomForest_Head(ClassicClassificationHead):
     def __init__(self, n_way, feat_dim, seed=42, n_estimators=100):
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
-        self.model = RandomForestClassifier(n_estimators=n_estimators, random_state=seed)
+        self.model = RandomForestClassifier(
+            n_estimators=n_estimators, random_state=seed
+        )
 
 
 class GMM_Head(ClassicClassificationHead):
@@ -561,4 +564,4 @@ if __name__ == "__main__":
     logits = head.get_logits(z_query)
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for GMM logits."
     print(f"GMM test: {head.test(z_query, z_query_labels)}")
-    print(">>GMM Ok!\n")
+    print(">>GMM Ok!")
