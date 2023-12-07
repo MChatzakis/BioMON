@@ -29,9 +29,7 @@ class BioMetaOptNet(MetaTemplate):
         z_query = z_query.contiguous().view(self.n_way * self.n_query, -1)
         z_support = z_support.contiguous().view(self.n_way * self.n_support, -1)
 
-        z_support_labels = torch.from_numpy(
-            np.repeat(range(self.n_way), self.n_support)
-        )
+        z_support_labels = torch.from_numpy(np.repeat(range(self.n_way), self.n_support))
 
         head = self.initialize_model()  # todo
         head.fit(z_support, z_support_labels)
