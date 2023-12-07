@@ -10,9 +10,6 @@ from methods.heads import ClassificationHead, head_fit
 class BioMetaOptNet(MetaTemplate):
     """
     BioMetaOptNet is a MetaOptNet variant for Biomedical data collections.
-
-    Args:
-        MetaTemplate (_type_): _description_
     """
 
     def __init__(self, backbone, head_model_params, n_way, n_support):

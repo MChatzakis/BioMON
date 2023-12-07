@@ -84,7 +84,8 @@ class ClassificationHead(nn.Module):
             np.array: np.array of shape (n_way * size, n_way), representing the logits.
         """
         print("Warning: get_logit_from_probs is probably not correct.")
-        return np.log(probabilities / (1.0001 - probabilities))
+        #return np.log(probabilities / (1.0001 - probabilities))
+        return np.log(probabilities)
     
     def test(self, X_test, y_test):
         """
@@ -233,8 +234,8 @@ class NaiveBayes_Head(ClassificationHead):
     Naive Bayes classification head.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, n_way, feat_dim, seed=42):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=42)
         self.model = GaussianNB()
 
     def get_logits(self, query_features):
@@ -242,7 +243,7 @@ class NaiveBayes_Head(ClassificationHead):
         probabilities = np.array(self.model.predict_proba(x_test))
 
         # Generate logits from probabilities:
-        scores_raw = self.get_logit_from_probs(probabilities)
+        scores_raw = self._get_logit_from_probs(probabilities)
 
         # Transform to trainable tensor:
         scores = torch.from_numpy(scores_raw)
@@ -252,7 +253,6 @@ class NaiveBayes_Head(ClassificationHead):
     def fit(self, support_features, support_labels):
         X_train = support_features.detach().numpy()
         y_train = support_labels.detach().numpy()
-
         self.model.fit(X_train, y_train)
 
 
@@ -422,13 +422,13 @@ if __name__ == "__main__":
     head = MLP_Head(
         n_way,
         emb_dim,
+        seed=42,
         epochs=5,
         hidden_dims=[512, 256, 64, 32],
         dropouts=[0.4, 0.4, 0.4, 0.4],
         activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()],
         device="cpu",
     )
-    
     head.fit(z_support, z_labels)
     logits = head.get_logits(z_query)
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for MLP logits."
@@ -448,10 +448,11 @@ if __name__ == "__main__":
     # assert logits.shape == (n_way * n_query, n_way), "Wrong shape for DecTree logits."
 
     # Naive Bayes Head
-    # head = NaiveBayes_Head()
-    # head.fit(z_support, z_labels)
-    # logits = head.get_logits(z_query)
-    # assert logits.shape == (n_way * n_query, n_way), "Wrong shape for NB logits."
-    # print(">>Naive Bayes Ok!")
+    head = NaiveBayes_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
+    head.fit(z_support, z_labels)
+    logits = head.get_logits(z_query)
+    #print(logits)
+    assert logits.shape == (n_way * n_query, n_way), "Wrong shape for NB logits."
+    print(">>Naive Bayes Ok!")
 
     
