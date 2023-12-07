@@ -39,7 +39,6 @@ class ClassificationHead:
         Classification heads should be compatible with BioMetaOptNet, and should implement the following methods:
         - get_logits(self, query_features): Get the logits for the query set.
         - fit(self, support_features, support_labels): Fit the support set to the support labels.
-        - _get_logit_from_probs(self, probabilities): Get the logits from the probabilities. Protected method.
         - test(self, X_test, y_test): Test the performance of the classifier.
 
         n_way (int): Number of classes in the classification task.
@@ -75,30 +74,10 @@ class ClassificationHead:
         """
         pass
 
-    def _get_logit_from_probs(self, probabilities):
-        """
-        Get the logits from the probabilities.
-        Many sklearn models do not return logits, but probabilities.
-        This method should be used to transform the probabilities into logits.
-
-        Given a probabiliti p e (0, 1), the logit is defined as:
-        logit(p) = log(p / (1 - p))
-        As per: https://en.wikipedia.org/wiki/Logit
-
-        Args:
-            probabilities (np.array): np.array of shape (n_way * size, n_way)
-
-        Returns:
-            np.array: np.array of shape (n_way * size, n_way), representing the logits.
-        """
-        print("Warning: get_logit_from_probs is probably not correct.")
-        # return np.log(probabilities / (1.0001 - probabilities))
-        return np.log(probabilities)
-
     def test(self, X_test, y_test):
         """
         Test the performance of the classifier.
-        It should return a tuple (loss, accuracy, ...).
+        It should return a tuple (loss, accuracy,).
 
         Args:
             X_test (tensor): Input tensor of shape (n_way * n_query, feat_dim)
@@ -119,10 +98,17 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
 
         This is meant to be an abstract class, and should not be instanciated directly.
 
-        Args:
-            n_way (int): Number of classes in the classification task.
-            feat_dim (int): Dimension of the feature vectors.
-            seed (int, optional): Seed for training. Defaults to 42.
+        Torch models should be compatible with BioMetaOptNet, and should implement the following methods:
+        - forward(self, x): Forward pass through the model.
+        - train_model(self, support_features, support_labels): Complete training routine for the head model.
+        - test(self, X_test, y_test): Test the performance of the classifier.
+        - methods inherited from ClassificationHead
+        
+        Additional args:
+        - batch_size (int, optional): Batch size for training. Defaults to 32.
+        - epochs (int, optional): Number of epochs for training. Defaults to 2.
+        - device (str, optional): Device to use for training. Defaults to "cpu".
+            
         """
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.batch_size = batch_size
@@ -215,6 +201,13 @@ class ClassicClassificationHead(ClassificationHead):
     """
 
     def __init__(self, n_way, feat_dim, seed=42):
+        """
+        Initialize a classic classification head model.
+        This is meant to be an abstract class, and should not be instanciated directly.
+        
+        Classic models should be compatible with BioMetaOptNet, and most of them are implemented with sklearn.      
+        """
+        
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = None
 
@@ -240,6 +233,26 @@ class ClassicClassificationHead(ClassificationHead):
         y_test = y_test.detach().numpy()
         return (-1, self.model.score(X_test, y_test))
 
+    def _get_logit_from_probs(self, probabilities):
+        """
+        Get the logits from the probabilities.
+        Many sklearn models do not return logits, but probabilities.
+        This method should be used to transform the probabilities into logits.
+
+        Given a probabiliti p e (0, 1), the logit is defined as:
+        logit(p) = log(p / (1 - p))
+        As per: https://en.wikipedia.org/wiki/Logit
+
+        Args:
+            probabilities (np.array): np.array of shape (n_way * size, n_way)
+
+        Returns:
+            np.array: np.array of shape (n_way * size, n_way), representing the logits.
+        """
+        print("Warning: get_logit_from_probs is probably not correct.")
+        # return np.log(probabilities / (1.0001 - probabilities))
+        return np.log(probabilities)
+
 
 ######################################################################
 #                                                                    #
@@ -264,7 +277,7 @@ class SVM_Head(ClassicClassificationHead):
         """
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
 
-        self.model = svm.SVC(kernel=kernel, C=C, probability=probability)
+        self.model = svm.SVC(kernel=kernel, C=C, probability=probability, random_state=seed)
 
     def get_logits(self, query_features):
         x_test = query_features.detach().numpy()
@@ -307,7 +320,7 @@ class DecisionTree_Head(ClassicClassificationHead):
 class RandomForest_Head(ClassicClassificationHead):
     def __init__(self, n_way, feat_dim, seed=42, n_estimators=100):
         super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
-        self.model = RandomForestClassifier(n_estimators=n_estimators)
+        self.model = RandomForestClassifier(n_estimators=n_estimators, random_state=seed)
 
 
 class GMM_Head(ClassicClassificationHead):
@@ -324,6 +337,7 @@ class GMM_Head(ClassicClassificationHead):
             n_components=n_way,
             covariance_type=covar_type,
             init_params=init_params,
+            random_state=seed,
         )
 
     def test(self, X_test, y_test):
