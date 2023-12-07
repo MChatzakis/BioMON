@@ -239,7 +239,7 @@ class ClassicClassificationHead(ClassificationHead):
         Many sklearn models do not return logits, but probabilities.
         This method should be used to transform the probabilities into logits.
 
-        Given a probabiliti p e (0, 1), the logit is defined as: (Get ready for the show)
+        Given a probability p e (0, 1), the logit is defined as: (Get ready for the show)
         logit(p) = log(p / (1 - p))
         (https://en.wikipedia.org/wiki/Logit)
 
