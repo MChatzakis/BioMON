@@ -11,6 +11,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import Ridge
 
 
 ###########################################################
@@ -41,7 +42,7 @@ class ClassificationHead:
         - get_logits(self, query_features): Get the logits for the query set.
         - fit(self, support_features, support_labels): Fit the support set to the support labels.
         - test(self, X_test, y_test): Test the performance of the classifier.
-
+        
         n_way (int): Number of classes in the classification task.
         feat_dim (int): Dimension of the feature vectors.
         seed (int, optional): Random seed. Defaults to 42.
@@ -52,7 +53,7 @@ class ClassificationHead:
         self.feat_dim = feat_dim
         self.seed = seed
         self.device = device
-
+    
     def get_logits(self, query_features):
         """
         Performs a pass through the head model to get logits for the query features.
@@ -143,8 +144,8 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         dataset = TensorDataset(support_features, support_labels)
         loader = torch.utils.data.DataLoader(
             dataset, batch_size=self.batch_size, shuffle=True
-        )
-
+        ) 
+        
         for epoch in range(self.epochs):
             self.train()
             for X, y in loader:
@@ -304,7 +305,46 @@ class SVM_Head(ClassicClassificationHead):
 
         return scores
 
+class RidgeRegression_Head(ClassicClassificationHead):
+    """
+    Ridge-Regression classification head.
+    """
 
+    def __init__(
+        self,
+        n_way,
+        feat_dim,
+        seed=42,
+        alpha=1.0,
+        fit_intercept=True,
+        solver ='lsqr',
+        device="cpu",
+    ):
+        """
+        Instanciate a Ridge-Regression classification head.
+
+        Args:
+            alpha(float,optional): Whether to fit the intercept for this model. If False X and y are expected to be centered.
+            it_intercept(bool,optional): Whether to fit the intercept for this model. If False X and y are expected to be centered.
+            solver (string, optional): Constant that multiplies the L2 term, controlling regularization strength.
+        """
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+
+        self.model = Ridge(
+                        alpha=1.0,
+                        fit_intercept=True,
+                        solver ='lsqr'
+                        )
+
+    def get_logits(self, query_features):
+        x_test = query_features.detach().numpy()
+        scores_raw = self.model.predict(x_test)
+        
+        # Transform to trainable tensor:
+        scores = torch.from_numpy(scores_raw)
+
+        return scores
+    
 class NaiveBayes_Head(ClassicClassificationHead):
     """
     Naive Bayes classification head.
