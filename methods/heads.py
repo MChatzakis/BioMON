@@ -213,7 +213,7 @@ class ClassicClassificationHead(ClassificationHead):
 
     def get_logits(self, query_features):
         x_test = query_features.detach().numpy()
-        probabilities = np.array(self.model.predict_proba(x_test)) + 0.00000001
+        probabilities = np.array(self.model.predict_proba(x_test))
 
         # Generate logits from probabilities:
         scores_raw = self._get_logit_from_probs(probabilities)
@@ -239,9 +239,9 @@ class ClassicClassificationHead(ClassificationHead):
         Many sklearn models do not return logits, but probabilities.
         This method should be used to transform the probabilities into logits.
 
-        Given a probabiliti p e (0, 1), the logit is defined as:
+        Given a probabiliti p e (0, 1), the logit is defined as: (Get ready for the show)
         logit(p) = log(p / (1 - p))
-        As per: https://en.wikipedia.org/wiki/Logit
+        (https://en.wikipedia.org/wiki/Logit)
 
         Args:
             probabilities (np.array): np.array of shape (n_way * size, n_way)
@@ -249,9 +249,13 @@ class ClassicClassificationHead(ClassificationHead):
         Returns:
             np.array: np.array of shape (n_way * size, n_way), representing the logits.
         """
-        print("Warning: get_logit_from_probs is probably not correct.")
-        # return np.log(probabilities / (1.0001 - probabilities))
-        return np.log(probabilities)
+        #print("Warning: get_logit_from_probs is probably not correct.")
+        #return np.log(probabilities)
+        c = 0.00000001
+        nom = probabilities + c
+        denom = 1 - probabilities + c
+        return np.log(nom / denom)
+        
 
 
 ######################################################################
