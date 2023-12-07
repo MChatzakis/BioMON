@@ -38,12 +38,15 @@ class BioMetaOptNet(MetaTemplate):
         {
             "model": model name,
             "args": {
-                "input_dim": self.feature.final_feat_dim,
-                "hidden_dim": 64,
-                "output_dim": self.n_way,
                 ...
             },
         }
+        
+        Shared arguments among all models:
+        -n_way,
+        -feat_dim,
+        -seed,
+        -device
 
         Returns:
             ClassificationHead: A new instance of the classification head model.

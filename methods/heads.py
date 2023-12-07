@@ -30,6 +30,7 @@ class ClassificationHead:
         n_way,
         feat_dim,
         seed=42,
+        device="cpu",
     ):
         """
         Instanciate a classification head model. Classification heads are used in the Meta-training loop to calculate the logits for the query set.
@@ -50,6 +51,7 @@ class ClassificationHead:
         self.n_way = n_way
         self.feat_dim = feat_dim
         self.seed = seed
+        self.device = device
 
     def get_logits(self, query_features):
         """
@@ -110,10 +112,9 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         - device (str, optional): Device to use for training. Defaults to "cpu".
 
         """
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
         self.batch_size = batch_size
         self.epochs = epochs
-        self.device = device
 
         self.final_train_loss = None
         self.final_train_acc = None
@@ -200,7 +201,7 @@ class ClassicClassificationHead(ClassificationHead):
     Classic classification head.
     """
 
-    def __init__(self, n_way, feat_dim, seed=42):
+    def __init__(self, n_way, feat_dim, seed=42, device="cpu"):
         """
         Initialize a classic classification head model.
         This is meant to be an abstract class, and should not be instanciated directly.
@@ -208,7 +209,7 @@ class ClassicClassificationHead(ClassificationHead):
         Classic models should be compatible with BioMetaOptNet, and most of them are implemented with sklearn.
         """
 
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
         self.model = None
 
     def get_logits(self, query_features):
@@ -219,7 +220,8 @@ class ClassicClassificationHead(ClassificationHead):
         scores_raw = self._get_logit_from_probs(probabilities)
 
         # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
+        # scores = torch.from_numpy(scores_raw)
+        scores = to_torch(x=scores_raw, requires_grad=True, device=self.device)
 
         return scores
 
@@ -269,7 +271,16 @@ class SVM_Head(ClassicClassificationHead):
     Multi-class Support Vector Machine classification head.
     """
 
-    def __init__(self, n_way, feat_dim, seed, kernel="linear", C=1, probability=True):
+    def __init__(
+        self,
+        n_way,
+        feat_dim,
+        seed=42,
+        device="cpu",
+        kernel="linear",
+        C=1,
+        probability=True,
+    ):
         """
         Instanciate a SVM classification head model.
 
@@ -278,7 +289,7 @@ class SVM_Head(ClassicClassificationHead):
             C (int, optional): L2-Regularization parameter. Defaults to 1.
             probability (bool, optional): _description_. Defaults to True.
         """
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
 
         self.model = svm.SVC(
             kernel=kernel, C=C, probability=probability, random_state=seed
@@ -299,14 +310,14 @@ class NaiveBayes_Head(ClassicClassificationHead):
     Naive Bayes classification head.
     """
 
-    def __init__(self, n_way, feat_dim, seed=42):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=42)
+    def __init__(self, n_way, feat_dim, seed=42, device="cpu"):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
         self.model = GaussianNB()
 
 
 class KNN_Head(ClassicClassificationHead):
-    def __init__(self, n_way, feat_dim, seed=42, n_neighbors=3):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+    def __init__(self, n_way, feat_dim, seed=42, device="cpu", n_neighbors=3):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
 
         self.n_neighbors = n_neighbors
         self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
@@ -317,14 +328,14 @@ class DecisionTree_Head(ClassicClassificationHead):
     Decision Tree classification head.
     """
 
-    def __init__(self, n_way, feat_dim, seed=42):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+    def __init__(self, n_way, feat_dim, seed=42, device="cpu"):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
         self.model = DecisionTreeClassifier(random_state=seed)
 
 
 class RandomForest_Head(ClassicClassificationHead):
-    def __init__(self, n_way, feat_dim, seed=42, n_estimators=100):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+    def __init__(self, n_way, feat_dim, seed=42, device="cpu", n_estimators=100):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
         self.model = RandomForestClassifier(
             n_estimators=n_estimators, random_state=seed
         )
@@ -335,11 +346,12 @@ class GMM_Head(ClassicClassificationHead):
         self,
         n_way,
         feat_dim,
-        seed,
+        seed=42,
+        device="cpu",
         covar_type="full",
         init_params="kmeans",
     ):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
         self.model = mixture.GaussianMixture(
             n_components=n_way,
             covariance_type=covar_type,
@@ -467,7 +479,7 @@ class LogisticRegression_Head(TorchClassificationHead):
 ##############################
 
 # Note: When adding a new model, be sure to update the dispatcher.
-DISPATCHER ={
+DISPATCHER = {
     "MLP": MLP_Head,
     "LogisticRegression": LogisticRegression_Head,
     "SVM": SVM_Head,
@@ -478,21 +490,30 @@ DISPATCHER ={
     "GMM": GMM_Head,
 }
 
-def to_torch(x, requires_grad=True):
+
+def to_torch(x, requires_grad=True, device="cpu"):
     """
     Transform a numpy array to a torch tensor.
-    
+
     Args:
         x (np.array): Numpy array to transform.
 
     Returns:
         Tensor: Pytorch tensor.
     """
-    
+
     ten = torch.from_numpy(x)
-    ten.requires_grad = True
-    #Variable(y_query.cuda()) # deprecated
+
+    if device == "cuda":
+        ten = ten.cuda()
+
+    if requires_grad:
+        ten.requires_grad = True
+
+    # Variable(ten.cuda()) # deprecated
+
     return ten
+
 
 ##########################################
 #                                        #
@@ -503,6 +524,7 @@ def to_torch(x, requires_grad=True):
 if __name__ == "__main__":
     print("==== Generating random data =====")
 
+    device = "cuda" if torch.cuda.is_available() else "cpu"
     n_way = 5
     n_query = 10
     n_support = 5
@@ -528,7 +550,7 @@ if __name__ == "__main__":
         feat_dim=emb_dim,
         seed=42,
         batch_size=32,
-        device="cpu",
+        device=device,
         epochs=500,
         hidden_dims=[512, 256, 64, 32],
         activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()],
