@@ -1,0 +1,215 @@
+wandb_version: 1
+
+dataset:
+  desc: null
+  value:
+    type: classification
+    simple_cls:
+      _target_: datasets.cell.tabula_muris.TMSimpleDataset
+    set_cls:
+      n_way: 5
+      n_support: 5
+      n_query: 15
+      _target_: datasets.cell.tabula_muris.TMSetDataset
+    name: tabula_muris
+eval_split:
+  desc: null
+  value:
+  - train
+  - val
+  - test
+backbone:
+  desc: null
+  value:
+    _target_: backbones.fcnet.FCNet
+    layer_dim:
+    - 64
+    - 64
+train_classes:
+  desc: null
+  value: 59
+n_way:
+  desc: null
+  value: 5
+n_shot:
+  desc: null
+  value: 5
+n_query:
+  desc: null
+  value: 15
+method:
+  desc: null
+  value:
+    name: maml
+    train_batch: null
+    val_batch: null
+    fast_weight: true
+    start_epoch: 0
+    eval_type: set
+    stop_epoch: 4
+    type: meta
+    cls:
+      n_way: 5
+      n_support: 5
+      _target_: methods.maml.MAML
+      n_task: 4
+      task_update_num: 1
+      inner_lr: 0.01
+    n_task: 4
+    task_update_num: 1
+    maml_inner_lr: 0.01
+model:
+  desc: null
+  value: R2D2
+mode:
+  desc: null
+  value: train
+exp:
+  desc: null
+  value:
+    name: test
+    save_freq: 10
+    resume: false
+    seed: 42
+    val_freq: 1
+optimizer:
+  desc: null
+  value: Adam
+lr:
+  desc: null
+  value: 0.001
+optimizer_cls:
+  desc: null
+  value:
+    _target_: torch.optim.Adam
+    lr: 0.001
+checkpoint:
+  desc: null
+  value:
+    dir: checkpoints/test/tabula_muris/maml_R2D2
+    test_iter: best_model
+    time: '20231208_195853'
+wandb:
+  desc: null
+  value:
+    project: BioMed-DL
+    entity: manosxatzakiss2000
+    mode: online
+iter_num:
+  desc: null
+  value: 1
+_wandb:
+  desc: null
+  value:
+    python_version: 3.10.11
+    cli_version: 0.15.4
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1702061935.028359
+    t:
+      1:
+      - 1
+      - 5
+      - 41
+      - 50
+      - 51
+      - 53
+      - 55
+      - 77
+      2:
+      - 1
+      - 5
+      - 41
+      - 50
+      - 51
+      - 53
+      - 55
+      - 77
+      3:
+      - 2
+      - 7
+      - 16
+      - 23
+      4: 3.10.11
+      5: 0.15.4
+      8:
+      - 4
+      - 8
+    m:
+    - 1: epoch
+      4: epoch
+      6:
+      - 1
+    - 1: loss/train
+      5: 1
+      6:
+      - 1
+    - 1: acc/val
+      5: 1
+      6:
+      - 1
+    - 1: eval_results._type
+      5: 1
+      6:
+      - 1
+    - 1: eval_results.sha256
+      5: 1
+      6:
+      - 1
+    - 1: eval_results.size
+      5: 1
+      6:
+      - 1
+    - 1: eval_results.artifact_path
+      5: 1
+      6:
+      - 1
+    - 1: eval_results._latest_artifact_path
+      5: 1
+      6:
+      - 1
+    - 1: eval_results.path
+      5: 1
+      6:
+      - 1
+    - 1: eval_results.ncols
+      5: 1
+      6:
+      - 1
+    - 1: eval_results.nrows
+      5: 1
+      6:
+      - 1
+model_details:
+  desc: null
+  value:
+    feature:
+      encoder:
+        '0':
+          '0': Linear_fw(in_features=2866, out_features=64, bias=True)
+          '1': BatchNorm1d_fw(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          '2': ReLU()
+          '3': Dropout(p=0.2, inplace=False)
+        '1':
+          '0': Linear_fw(in_features=64, out_features=64, bias=True)
+          '1': BatchNorm1d_fw(64, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          '2': ReLU()
+          '3': Dropout(p=0.2, inplace=False)
+    classifier: Linear_fw(in_features=64, out_features=5, bias=True)
+    loss_fn: CrossEntropyLoss()
+optimizer_details:
+  desc: null
+  value:
+    lr: 0.001
+    betas:
+    - 0.9
+    - 0.999
+    eps: 1.0e-08
+    weight_decay: 0
+    amsgrad: false
+    maximize: false
+    foreach: null
+    capturable: false
+    differentiable: false
+    fused: null

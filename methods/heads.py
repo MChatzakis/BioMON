@@ -31,7 +31,6 @@ class ClassificationHead:
         n_way,
         feat_dim,
         seed=42,
-        device="cpu",
     ):
         """
         Instanciate a classification head model. Classification heads are used in the Meta-training loop to calculate the logits for the query set.
@@ -52,7 +51,6 @@ class ClassificationHead:
         self.n_way = n_way
         self.feat_dim = feat_dim
         self.seed = seed
-        self.device = device
     
     def get_logits(self, query_features):
         """
@@ -95,7 +93,7 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
     It inherits from both ClassificationHead and nn.Module.
     """
 
-    def __init__(self, n_way, feat_dim, seed=42, batch_size=32, epochs=2, device="cpu"):
+    def __init__(self, n_way, feat_dim, seed=42, batch_size=32, epochs=5):
         """
         Instanciate a Torch classification head model.
 
@@ -113,7 +111,7 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         - device (str, optional): Device to use for training. Defaults to "cpu".
 
         """
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.batch_size = batch_size
         self.epochs = epochs
 
@@ -140,7 +138,7 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
             support_features (tensor): Tensor of shape (n_way * n_support, feat_dim)
             support_labels (tensor): Tensor of shape (n_way * n_support)
         """
-
+        
         dataset = TensorDataset(support_features, support_labels)
         loader = torch.utils.data.DataLoader(
             dataset, batch_size=self.batch_size, shuffle=True
@@ -149,6 +147,10 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         for epoch in range(self.epochs):
             self.train()
             for X, y in loader:
+                if torch.cuda.is_available():
+                    X = X.cuda()
+                    y = y.cuda()
+                
                 self.optimizer.zero_grad()
 
                 logits = self.forward(X)
@@ -177,6 +179,10 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         predicted_labels = []
         with torch.no_grad():
             for X, y in loader:
+                if torch.cuda.is_available():
+                    X = X.cuda()
+                    y = y.cuda()
+                
                 logits = self.forward(X)
                 loss = self.criterion(logits, y)
                 total_loss += loss.item()
@@ -202,7 +208,7 @@ class ClassicClassificationHead(ClassificationHead):
     Classic classification head.
     """
 
-    def __init__(self, n_way, feat_dim, seed=42, device="cpu"):
+    def __init__(self, n_way, feat_dim, seed=42):
         """
         Initialize a classic classification head model.
         This is meant to be an abstract class, and should not be instanciated directly.
@@ -210,7 +216,7 @@ class ClassicClassificationHead(ClassificationHead):
         Classic models should be compatible with BioMetaOptNet, and most of them are implemented with sklearn.
         """
 
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = None
 
     def get_logits(self, query_features):
@@ -222,7 +228,7 @@ class ClassicClassificationHead(ClassificationHead):
 
         # Transform to trainable tensor:
         # scores = torch.from_numpy(scores_raw)
-        scores = to_torch(x=scores_raw, requires_grad=True, device=self.device)
+        scores = to_torch(x=scores_raw, requires_grad=True)
 
         return scores
 
@@ -277,7 +283,6 @@ class SVM_Head(ClassicClassificationHead):
         n_way,
         feat_dim,
         seed=42,
-        device="cpu",
         kernel="linear",
         C=1,
         probability=True,
@@ -290,7 +295,7 @@ class SVM_Head(ClassicClassificationHead):
             C (int, optional): L2-Regularization parameter. Defaults to 1.
             probability (bool, optional): _description_. Defaults to True.
         """
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
 
         self.model = svm.SVC(
             kernel=kernel, C=C, probability=probability, random_state=seed
@@ -301,8 +306,9 @@ class SVM_Head(ClassicClassificationHead):
         scores_raw = self.model.decision_function(x_test)
 
         # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
-
+        #scores = torch.from_numpy(scores_raw)
+        scores = to_torch(x=scores_raw, requires_grad=True)
+        
         return scores
 
 class RidgeRegression_Head(ClassicClassificationHead):
@@ -531,7 +537,7 @@ DISPATCHER = {
 }
 
 
-def to_torch(x, requires_grad=True, device="cpu"):
+def to_torch(x, requires_grad=True):
     """
     Transform a numpy array to a torch tensor.
 
@@ -544,7 +550,7 @@ def to_torch(x, requires_grad=True, device="cpu"):
 
     ten = torch.from_numpy(x)
 
-    if device == "cuda":
+    if torch.cuda.is_available():
         ten = ten.cuda()
 
     if requires_grad:

@@ -35,10 +35,16 @@ class Baseline(MetaTemplate):
             self.device = torch.device("cpu")
 
     def forward(self, x):
-        if isinstance(x, list):
-            x = [Variable(obj.cuda()) for obj in x]
+        if torch.cuda.is_available():
+            if isinstance(x, list):
+                x = [Variable(obj.cuda()) for obj in x]
+            else:
+                x = Variable(x.cuda())
         else:
-            x = Variable(x.cuda())
+            if isinstance(x, list):
+                x = [Variable(obj) for obj in x]
+            else:
+                x = Variable(x)
 
         out = self.feature.forward(x)
         if self.classifier != None:
@@ -49,9 +55,14 @@ class Baseline(MetaTemplate):
         scores = self.forward(x)
         print(scores.shape)
         if self.type == 'classification':
-            y = y.long().cuda()
+            if torch.cuda.is_available():
+                y = y.long().cuda()
+            else:
+                y = y.long()
         else:
-            y = y.cuda()
+            if torch.cuda.is_available():
+                y = y.cuda()
+                
 
         return self.loss_fn(scores, y)
 
@@ -146,7 +157,11 @@ class Baseline(MetaTemplate):
             rand_id = np.random.permutation(support_size)
             for i in range(0, support_size, batch_size):
                 set_optimizer.zero_grad()
-                selected_id = torch.from_numpy(rand_id[i: min(i + batch_size, support_size)]).cuda()
+                if torch.cuda.is_available():
+                    selected_id = torch.from_numpy(rand_id[i: min(i + batch_size, support_size)]).cuda()
+                else:
+                    selected_id = torch.from_numpy(rand_id[i: min(i + batch_size, support_size)])
+
                 z_batch = z_support[selected_id]
                 y_batch = y_support[selected_id]
                 scores = linear_clf(z_batch)

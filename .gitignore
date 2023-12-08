@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 conf/.DS_Store
 .DS_Store
+
+data/
+wandb/
+outputs/

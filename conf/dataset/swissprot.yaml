@@ -3,7 +3,6 @@
 defaults:
   - classification_base
 
-
 dataset:
   name: swissprot
   simple_cls:

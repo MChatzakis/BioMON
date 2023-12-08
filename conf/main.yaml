@@ -2,7 +2,7 @@ defaults:
   - dataset: tabula_muris
   - method: maml
 
-model: FCNet
+model: R2D2
 n_way: ???
 n_shot: ???
 n_query: ???
@@ -28,8 +28,8 @@ checkpoint:
   time: latest
 
 wandb:
-  project: ???
-  entity: ???
+  project: BioMed-DL
+  entity: manosxatzakiss2000
   mode: "online" # Can set to offline, disabled
 
-iter_num: 600
+iter_num: 1

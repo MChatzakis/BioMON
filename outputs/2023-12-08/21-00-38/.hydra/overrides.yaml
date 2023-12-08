@@ -1,0 +1,4 @@
+- exp.name=test
+- method=protonet
+- dataset=tabula_muris
+- method.stop_epoch=1

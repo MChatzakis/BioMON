@@ -22,13 +22,18 @@ class ProtoNet(MetaTemplate):
 
         dists = euclidean_dist(z_query, z_proto)
         scores = -dists
+        print(f"scores shape: {scores.shape}")
+
         return scores
 
 
     def set_forward_loss(self, x):
         y_query = torch.from_numpy(np.repeat(range( self.n_way ), self.n_query ))
-        y_query = Variable(y_query.cuda())
-
+        if torch.cuda.is_available():
+            y_query = Variable(y_query.cuda())
+        else:
+            y_query = Variable(y_query)
+            
         scores = self.set_forward(x)
 
         return self.loss_fn(scores, y_query )

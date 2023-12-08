@@ -51,22 +51,29 @@ class MatchingNet(MetaTemplate):
         G, G_normalized = self.encode_training_set( z_support)
 
         y_s = torch.from_numpy(np.repeat(range(self.n_way), self.n_support))
-        Y_S = Variable(one_hot(y_s, self.n_way)).cuda()
+        if torch.cuda.is_available():
+            Y_S = Variable(one_hot(y_s, self.n_way)).cuda()
+        else:
+            Y_S = Variable(one_hot(y_s, self.n_way))
         f = z_query
         logprobs = self.get_logprobs(f, G, G_normalized, Y_S)
         return logprobs
 
     def set_forward_loss(self, x):
         y_query = torch.from_numpy(np.repeat(range( self.n_way ), self.n_query ))
-        y_query = Variable(y_query.cuda())
+        if torch.cuda.is_available():
+            y_query = Variable(y_query.cuda())
+        else:
+            y_query = Variable(y_query)
 
         logprobs = self.set_forward(x)
 
         return self.loss_fn(logprobs, y_query )
 
     def cuda(self):
-        super(MatchingNet, self).cuda()
-        self.FCE = self.FCE.cuda()
+        if torch.cuda.is_available():
+            super(MatchingNet, self).cuda()
+            self.FCE = self.FCE.cuda()
         return self
 
 class FullyContextualEmbedding(nn.Module):
@@ -94,7 +101,8 @@ class FullyContextualEmbedding(nn.Module):
 
         return h
     def cuda(self):
-        super(FullyContextualEmbedding, self).cuda()
-        self.c_0 = self.c_0.cuda()
+        if torch.cuda.is_available():
+            super(FullyContextualEmbedding, self).cuda()
+            self.c_0 = self.c_0.cuda()
         return self
 
