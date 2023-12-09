@@ -91,3 +91,6 @@ Time: 20231209-142645, Setting: tabula_muris-test-R2D2-bioMON_MLP 5shot 5way, Ac
 Time: 20231209-143004, Setting: tabula_muris-train-R2D2-bioMON_MLP 5shot 5way, Acc: 81.33% +- 0.00%, Model: checkpoints/test/tabula_muris/bioMON_MLP_R2D2/20231209_142900/best_model.tar 
 Time: 20231209-143033, Setting: tabula_muris-val-R2D2-bioMON_MLP 5shot 5way, Acc: 68.00% +- 0.00%, Model: checkpoints/test/tabula_muris/bioMON_MLP_R2D2/20231209_142900/best_model.tar 
 Time: 20231209-143109, Setting: tabula_muris-test-R2D2-bioMON_MLP 5shot 5way, Acc: 73.33% +- 0.00%, Model: checkpoints/test/tabula_muris/bioMON_MLP_R2D2/20231209_142900/best_model.tar 
+Time: 20231209-151820, Setting: tabula_muris-train-FCNET-bioMON_LR 5shot 5way, Acc: 80.00% +- 0.00%, Model: checkpoints/test/tabula_muris/bioMON_LR_FCNET/20231209_151704/best_model.tar 
+Time: 20231209-151857, Setting: tabula_muris-val-FCNET-bioMON_LR 5shot 5way, Acc: 74.67% +- 0.00%, Model: checkpoints/test/tabula_muris/bioMON_LR_FCNET/20231209_151704/best_model.tar 
+Time: 20231209-151939, Setting: tabula_muris-test-FCNET-bioMON_LR 5shot 5way, Acc: 65.33% +- 0.00%, Model: checkpoints/test/tabula_muris/bioMON_LR_FCNET/20231209_151704/best_model.tar 

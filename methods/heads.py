@@ -345,7 +345,7 @@ class RidgeRegression_Head(ClassicClassificationHead):
 
         # Transform to trainable tensor:
         scores = to_torch(x=scores_raw, requires_grad=True)
-        # print(f"Scores shape: {scores.shape}")
+        # print(f"Scores shape: {scores.shape}") -> (samples, 1)
         # print(scores)
         return scores
 
