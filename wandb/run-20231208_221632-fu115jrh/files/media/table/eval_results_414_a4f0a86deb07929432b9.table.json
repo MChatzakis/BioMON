@@ -1,1 +1,0 @@
-{"columns": ["split", "acc_mean", "acc_std"], "data": [["train", 100.0, 0.0], ["val", 88.0, 0.0], ["test", 76.0, 0.0]]}
