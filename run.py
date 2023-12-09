@@ -1,30 +1,42 @@
 import hydra
 import wandb
+import time
 from hydra.utils import instantiate
 from math import ceil
 from omegaconf import OmegaConf
 from prettytable import PrettyTable
 
 from datasets.cell.tabula_muris import *
-from utils.io_utils import get_resume_file, hydra_setup, fix_seed, model_to_dict, opt_to_dict, get_model_file
+from utils.io_utils import (
+    get_resume_file,
+    hydra_setup,
+    fix_seed,
+    model_to_dict,
+    opt_to_dict,
+    get_model_file,
+)
 
 
 def initialize_dataset_model(cfg):
     # Instantiate train dataset as specified in dataset config under simple_cls or set_cls
     if cfg.method.type == "baseline":
-        train_dataset = instantiate(cfg.dataset.simple_cls, batch_size=cfg.method.train_batch, mode='train')
+        train_dataset = instantiate(
+            cfg.dataset.simple_cls, batch_size=cfg.method.train_batch, mode="train"
+        )
     elif cfg.method.type == "meta":
-        train_dataset = instantiate(cfg.dataset.set_cls, mode='train')
+        train_dataset = instantiate(cfg.dataset.set_cls, mode="train")
     else:
         raise ValueError(f"Unknown method type: {cfg.method.type}")
     train_loader = train_dataset.get_data_loader()
 
     # Instantiate val dataset as specified in dataset config under simple_cls or set_cls
     # Eval type (simple or set) is specified in method config, rather than dataset config
-    if cfg.method.eval_type == 'simple':
-        val_dataset = instantiate(cfg.dataset.simple_cls, batch_size=cfg.method.val_batch, mode='val')
+    if cfg.method.eval_type == "simple":
+        val_dataset = instantiate(
+            cfg.dataset.simple_cls, batch_size=cfg.method.val_batch, mode="val"
+        )
     else:
-        val_dataset = instantiate(cfg.dataset.set_cls, mode='val')
+        val_dataset = instantiate(cfg.dataset.set_cls, mode="val")
     val_loader = val_dataset.get_data_loader()
 
     # For MAML (and other optimization-based methods), need to instantiate backbone layers with fast weight
@@ -39,13 +51,13 @@ def initialize_dataset_model(cfg):
     if torch.cuda.is_available():
         model = model.cuda()
 
-    if cfg.method.name == 'maml':
+    if cfg.method.name == "maml":
         cfg.method.stop_epoch *= model.n_task  # maml use multiple tasks in one update
 
     return train_loader, val_loader, model
 
 
-@hydra.main(version_base=None, config_path='conf', config_name='main')
+@hydra.main(version_base=None, config_path="conf", config_name="main")
 def run(cfg):
     print(OmegaConf.to_yaml(cfg, resolve=True))
 
@@ -60,29 +72,39 @@ def run(cfg):
     train_loader, val_loader, model = initialize_dataset_model(cfg)
 
     if cfg.mode == "train":
-        model = train(train_loader, val_loader, model, cfg)
+        model, training_time, head_fit_time = train(
+            train_loader, val_loader, model, cfg
+        )
 
     results = []
     print("Checkpoint directory:", cfg.checkpoint.dir)
     for split in cfg.eval_split:
+        start_time = time.time()
         acc_mean, acc_std = test(cfg, model, split)
-        results.append([split, acc_mean, acc_std])
+        testing_time = time.time() - start_time
+        results.append([split, acc_mean, acc_std, f"{testing_time:.2f}"])
 
     print(f"Results logged to ./checkpoints/{cfg.exp.name}/results.txt")
 
     if cfg.mode == "train":
-        table = wandb.Table(data=results, columns=["split", "acc_mean", "acc_std"])
+        table = wandb.Table(
+            data=results, columns=["split", "acc_mean", "acc_std", "time(s)"]
+        )
         wandb.log({"eval_results": table})
 
-    display_table = PrettyTable(["split", "acc_mean", "acc_std"])
+    display_table = PrettyTable(["split", "acc_mean", "acc_std", "time(s)"])
     for row in results:
         display_table.add_row(row)
+
+    if cfg.mode == "train":
+        print(f"Total training time: {training_time:.2f}s")
+        print(f"Total head fit time: {head_fit_time:.2f}s")
 
     print(display_table)
 
 
 def train(train_loader, val_loader, model, cfg):
-    cfg.checkpoint.time = time.strftime('%Y%m%d_%H%M%S', time.localtime())
+    cfg.checkpoint.time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
     # add short date and time to checkpoint dir
     # cfg.checkpoint.dir += f"/{cfg.checkpoint.time}"
 
@@ -90,16 +112,22 @@ def train(train_loader, val_loader, model, cfg):
 
     if not os.path.isdir(cp_dir):
         os.makedirs(cp_dir)
-    wandb.init(project=cfg.wandb.project, entity=cfg.wandb.entity, config=OmegaConf.to_container(cfg, resolve=True),
-               group=cfg.exp.name, settings=wandb.Settings(start_method="thread"), mode=cfg.wandb.mode)
+    wandb.init(
+        project=cfg.wandb.project,
+        entity=cfg.wandb.entity,
+        config=OmegaConf.to_container(cfg, resolve=True),
+        group=cfg.exp.name,
+        settings=wandb.Settings(start_method="thread"),
+        mode=cfg.wandb.mode,
+    )
     wandb.define_metric("*", step_metric="epoch")
 
     if cfg.exp.resume:
         resume_file = get_resume_file(cp_dir)
         if resume_file is not None:
             tmp = torch.load(resume_file)
-            cfg.method.start_epoch = tmp['epoch'] + 1
-            model.load_state_dict(tmp['state'])
+            cfg.method.start_epoch = tmp["epoch"] + 1
+            model.load_state_dict(tmp["state"])
 
     optimizer = instantiate(cfg.optimizer_cls, params=model.parameters())
 
@@ -113,44 +141,67 @@ def train(train_loader, val_loader, model, cfg):
 
     max_acc = -1
 
+    total_head_fit_time = 0
+    total_training_time = 0
+
     for epoch in range(cfg.method.start_epoch, cfg.method.stop_epoch):
-        wandb.log({'epoch': epoch})
+        wandb.log({"epoch": epoch})
         model.train()
-        model.train_loop(epoch, train_loader, optimizer)
+
+        training_start_time = time.time()
+        if cfg.method.name.startswith("bioMON"):
+            total_head_fit_time += model.train_loop(epoch, train_loader, optimizer)
+        else:
+            model.train_loop(epoch, train_loader, optimizer)
+        total_training_time += time.time() - training_start_time
 
         if epoch % cfg.exp.val_freq == 0 or epoch == cfg.method.stop_epoch - 1:
             model.eval()
-            acc = model.test_loop(val_loader)
+            if cfg.method.name.startswith("bioMON"):
+                acc, head_train_acc, head_test_acc, head_fit_time = model.test_loop(
+                    val_loader
+                )
+            else:
+                acc = model.test_loop(val_loader)
             print(f"Epoch {epoch}: {acc:.2f}")
-            wandb.log({'acc/val': acc})
+            wandb.log({"acc/val": acc})
+
+            if cfg.method.name.startswith("bioMON"):
+                wandb.log({"acc/head_train": head_train_acc})
+                wandb.log({"acc/head_test": head_test_acc})
+                wandb.log({"time/head_fit_time": head_fit_time})
 
             if acc > max_acc:
                 print("best model! save...")
                 max_acc = acc
-                outfile = os.path.join(cp_dir, 'best_model.tar')
-                torch.save({'epoch': epoch, 'state': model.state_dict()}, outfile)
+                outfile = os.path.join(cp_dir, "best_model.tar")
+                torch.save({"epoch": epoch, "state": model.state_dict()}, outfile)
 
         if epoch % cfg.exp.save_freq == 0 or epoch == cfg.method.stop_epoch - 1:
-            outfile = os.path.join(cp_dir, '{:d}.tar'.format(epoch))
-            torch.save({'epoch': epoch, 'state': model.state_dict()}, outfile)
+            outfile = os.path.join(cp_dir, "{:d}.tar".format(epoch))
+            torch.save({"epoch": epoch, "state": model.state_dict()}, outfile)
 
-    return model
+    return model, total_training_time, total_head_fit_time
 
 
 def test(cfg, model, split):
-    if cfg.method.eval_type == 'simple':
-        test_dataset = instantiate(cfg.dataset.simple_cls, batch_size=cfg.method.val_batch, mode=split)
+    if cfg.method.eval_type == "simple":
+        test_dataset = instantiate(
+            cfg.dataset.simple_cls, batch_size=cfg.method.val_batch, mode=split
+        )
     else:
-        test_dataset = instantiate(cfg.dataset.set_cls, n_episode=cfg.iter_num, mode=split)
+        test_dataset = instantiate(
+            cfg.dataset.set_cls, n_episode=cfg.iter_num, mode=split
+        )
 
     test_loader = test_dataset.get_data_loader()
 
     model_file = get_model_file(cfg)
 
-    model.load_state_dict(torch.load(model_file)['state'])
+    model.load_state_dict(torch.load(model_file)["state"])
     model.eval()
 
-    if cfg.method.eval_type == 'simple':
+    if cfg.method.eval_type == "simple":
         acc_all = []
 
         num_iters = ceil(cfg.iter_num / len(test_dataset.get_data_loader()))
@@ -162,23 +213,50 @@ def test(cfg, model, split):
 
         acc_mean = np.mean(acc_all)
         acc_std = np.std(acc_all)
-
+        #assert False, "Not implemented"
     else:
         # Don't need to iterate, as this is accounted for in num_episodes of set data-loader
-        acc_mean, acc_std = model.test_loop(test_loader, return_std=True)
+        if cfg.method.name.startswith("bioMON"):
+            (
+                acc_mean,
+                acc_std,
+                head_train_acc_mean,
+                head_train_acc_std,
+                head_test_acc_mean,
+                head_test_acc_std,
+                head_fit_time_mean,
+                head_fit_time_std,
+            ) = model.test_loop(test_loader, return_std=True)
+        else:
+            acc_mean, acc_std = model.test_loop(test_loader, return_std=True)
 
-    with open(f'./checkpoints/{cfg.exp.name}/results.txt', 'a') as f:
+    with open(f"./checkpoints/{cfg.exp.name}/results.txt", "a") as f:
         timestamp = time.strftime("%Y%m%d-%H%M%S", time.localtime())
-        exp_setting = '%s-%s-%s-%s %sshot %sway' % (
-            cfg.dataset.name, split, cfg.model, cfg.method.name, cfg.n_shot, cfg.n_way)
+        exp_setting = "%s-%s-%s-%s %sshot %sway" % (
+            cfg.dataset.name,
+            split,
+            cfg.model,
+            cfg.method.name,
+            cfg.n_shot,
+            cfg.n_way,
+        )
 
-        acc_str = '%4.2f%% +- %4.2f%%' % (acc_mean, 1.96 * acc_std / np.sqrt(cfg.iter_num))
-        f.write('Time: %s, Setting: %s, Acc: %s, Model: %s \n' % (timestamp, exp_setting, acc_str, model_file))
+        acc_str = "%4.2f%% +- %4.2f%%" % (
+            acc_mean,
+            1.96 * acc_std / np.sqrt(cfg.iter_num),
+        )
+        f.write(
+            "Time: %s, Setting: %s, Acc: %s, Model: %s \n"
+            % (timestamp, exp_setting, acc_str, model_file)
+        )
 
+    #if cfg.method.name.startswith("bioMON"):
+    #    return acc_mean, acc_std, head_train_acc_mean, head_train_acc_std, head_test_acc_mean, head_test_acc_std, head_fit_time_mean, head_fit_time_std
+    
     return acc_mean, acc_std
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     hydra_setup()
     run()
     wandb.finish()

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import time
 import torch.nn as nn
 from torch.autograd import Variable
 from torch.utils.data import TensorDataset, DataLoader
@@ -51,6 +52,9 @@ class ClassificationHead:
         self.n_way = n_way
         self.feat_dim = feat_dim
         self.seed = seed
+        
+        self.fit_time = None
+        self.test_time = None
 
     def get_logits(self, query_features):
         """
@@ -139,6 +143,8 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
             support_labels (tensor): Tensor of shape (n_way * n_support)
         """
 
+        start_time = time.time()
+        
         dataset = TensorDataset(support_features, support_labels)
         loader = torch.utils.data.DataLoader(
             dataset, batch_size=self.batch_size, shuffle=True
@@ -163,7 +169,8 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
 
         self.final_train_acc = t_acc
         self.final_train_loss = t_loss
-
+        self.fit_time = time.time() - start_time
+        
         return t_loss, t_acc
 
     def test(self, X_test, y_test):
@@ -194,13 +201,13 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         f_loss = total_loss / len(loader)
         f_acc = np.mean(np.array(predicted_labels) == np.array(true_labels))
 
-        return f_loss, f_acc
+        return f_acc
 
     def get_logits(self, query_features):
         return self.forward(query_features)
 
     def fit(self, support_features, support_labels):
-        self.train_model(support_features, support_labels)
+        return self.train_model(support_features, support_labels)
 
 
 class ClassicClassificationHead(ClassificationHead):
@@ -235,12 +242,14 @@ class ClassicClassificationHead(ClassificationHead):
     def fit(self, support_features, support_labels):
         X_train = support_features.detach().numpy()
         y_train = support_labels.detach().numpy()
+        start_time = time.time()
         self.model.fit(X_train, y_train)
+        self.fit_time = time.time() - start_time
 
     def test(self, X_test, y_test):
         X_test = X_test.detach().numpy()
         y_test = y_test.detach().numpy()
-        return (-1, self.model.score(X_test, y_test))
+        return self.model.score(X_test, y_test)
 
     def _get_logit_from_probs(self, probabilities):
         """
