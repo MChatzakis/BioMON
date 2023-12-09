@@ -1,4 +1,0 @@
-- exp.name=test
-- method=matchingnet
-- dataset=tabula_muris
-- method.stop_epoch=1
