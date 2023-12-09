@@ -2,7 +2,7 @@ defaults:
   - dataset: tabula_muris
   - method: maml
 
-model: R2D2
+model: FCNET
 n_way: ???
 n_shot: ???
 n_query: ???

@@ -307,6 +307,8 @@ class SVM_Head(ClassicClassificationHead):
 
         # Transform to trainable tensor:
         scores = to_torch(x=scores_raw, requires_grad=True)
+        # print(f"Scores shape: {scores.shape}")
+        # print(scores)
 
         return scores
 
@@ -343,7 +345,8 @@ class RidgeRegression_Head(ClassicClassificationHead):
 
         # Transform to trainable tensor:
         scores = to_torch(x=scores_raw, requires_grad=True)
-
+        # print(f"Scores shape: {scores.shape}")
+        # print(scores)
         return scores
 
 
