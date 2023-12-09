@@ -164,3 +164,4 @@ conf/.DS_Store
 data/
 wandb/
 outputs/
+checkpoints/

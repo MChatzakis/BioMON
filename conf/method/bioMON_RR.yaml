@@ -1,0 +1,17 @@
+defaults:
+  - meta_base
+
+name: bioMON_RR
+
+cls:
+  _target_: methods.bio_metaoptnet.BioMetaOptNet
+  n_way: ${n_way}
+  n_support: ${n_shot}
+  head_model_params:
+    model: RR
+    args:
+      n_way: ${n_way}
+      seed: 42
+      alpha: 1.0
+      fit_intercept: True
+      solver: lsqr

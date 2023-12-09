@@ -41,7 +41,7 @@ class ClassificationHead:
         - get_logits(self, query_features): Get the logits for the query set.
         - fit(self, support_features, support_labels): Fit the support set to the support labels.
         - test(self, X_test, y_test): Test the performance of the classifier.
-        
+
         n_way (int): Number of classes in the classification task.
         feat_dim (int): Dimension of the feature vectors.
         seed (int, optional): Random seed. Defaults to 42.
@@ -51,7 +51,7 @@ class ClassificationHead:
         self.n_way = n_way
         self.feat_dim = feat_dim
         self.seed = seed
-    
+
     def get_logits(self, query_features):
         """
         Performs a pass through the head model to get logits for the query features.
@@ -138,19 +138,19 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
             support_features (tensor): Tensor of shape (n_way * n_support, feat_dim)
             support_labels (tensor): Tensor of shape (n_way * n_support)
         """
-        
+
         dataset = TensorDataset(support_features, support_labels)
         loader = torch.utils.data.DataLoader(
             dataset, batch_size=self.batch_size, shuffle=True
-        ) 
-        
+        )
+
         for epoch in range(self.epochs):
             self.train()
             for X, y in loader:
                 if torch.cuda.is_available():
                     X = X.cuda()
                     y = y.cuda()
-                
+
                 self.optimizer.zero_grad()
 
                 logits = self.forward(X)
@@ -182,7 +182,7 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
                 if torch.cuda.is_available():
                     X = X.cuda()
                     y = y.cuda()
-                
+
                 logits = self.forward(X)
                 loss = self.criterion(logits, y)
                 total_loss += loss.item()
@@ -306,10 +306,10 @@ class SVM_Head(ClassicClassificationHead):
         scores_raw = self.model.decision_function(x_test)
 
         # Transform to trainable tensor:
-        #scores = torch.from_numpy(scores_raw)
         scores = to_torch(x=scores_raw, requires_grad=True)
-        
+
         return scores
+
 
 class RidgeRegression_Head(ClassicClassificationHead):
     """
@@ -323,8 +323,7 @@ class RidgeRegression_Head(ClassicClassificationHead):
         seed=42,
         alpha=1.0,
         fit_intercept=True,
-        solver ='lsqr',
-        device="cpu",
+        solver="lsqr",
     ):
         """
         Instanciate a Ridge-Regression classification head.
@@ -334,36 +333,33 @@ class RidgeRegression_Head(ClassicClassificationHead):
             it_intercept(bool,optional): Whether to fit the intercept for this model. If False X and y are expected to be centered.
             solver (string, optional): Constant that multiplies the L2 term, controlling regularization strength.
         """
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
 
-        self.model = Ridge(
-                        alpha=1.0,
-                        fit_intercept=True,
-                        solver ='lsqr'
-                        )
+        self.model = Ridge(alpha=alpha, fit_intercept=fit_intercept, solver=solver)
 
     def get_logits(self, query_features):
         x_test = query_features.detach().numpy()
         scores_raw = self.model.predict(x_test)
-        
-        # Transform to trainable tensor:
-        scores = torch.from_numpy(scores_raw)
 
+        # Transform to trainable tensor:
+        scores = to_torch(x=scores_raw, requires_grad=True)
+        
         return scores
-    
+
+
 class NaiveBayes_Head(ClassicClassificationHead):
     """
     Naive Bayes classification head.
     """
 
-    def __init__(self, n_way, feat_dim, seed=42, device="cpu"):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+    def __init__(self, n_way, feat_dim, seed=42):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = GaussianNB()
 
 
 class KNN_Head(ClassicClassificationHead):
-    def __init__(self, n_way, feat_dim, seed=42, device="cpu", n_neighbors=3):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+    def __init__(self, n_way, feat_dim, seed=42, n_neighbors=3):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed,)
 
         self.n_neighbors = n_neighbors
         self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
@@ -374,14 +370,14 @@ class DecisionTree_Head(ClassicClassificationHead):
     Decision Tree classification head.
     """
 
-    def __init__(self, n_way, feat_dim, seed=42, device="cpu"):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+    def __init__(self, n_way, feat_dim, seed=42):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = DecisionTreeClassifier(random_state=seed)
 
 
 class RandomForest_Head(ClassicClassificationHead):
-    def __init__(self, n_way, feat_dim, seed=42, device="cpu", n_estimators=100):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+    def __init__(self, n_way, feat_dim, seed=42, n_estimators=100):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = RandomForestClassifier(
             n_estimators=n_estimators, random_state=seed
         )
@@ -393,11 +389,10 @@ class GMM_Head(ClassicClassificationHead):
         n_way,
         feat_dim,
         seed=42,
-        device="cpu",
         covar_type="full",
         init_params="kmeans",
     ):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed, device=device)
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
         self.model = mixture.GaussianMixture(
             n_components=n_way,
             covariance_type=covar_type,
@@ -437,8 +432,7 @@ class MLP_Head(TorchClassificationHead):
         feat_dim,
         seed=42,
         batch_size=32,
-        device="cpu",
-        epochs=3,
+        epochs=5,
         hidden_dims=[],
         activations=None,
         dropouts=None,
@@ -451,16 +445,12 @@ class MLP_Head(TorchClassificationHead):
             seed=seed,
             batch_size=batch_size,
             epochs=epochs,
-            device=device,
         )
 
         self.hidden_dims = hidden_dims
         self.output_dim = n_way
         self.lr = lr
         self.weight_decay = weight_decay
-        self.epochs = epochs
-        self.batch_size = batch_size
-        self.device = device
 
         self.network = nn.Sequential()
 
@@ -477,7 +467,9 @@ class MLP_Head(TorchClassificationHead):
             curr_size = hidden_dim
 
         self.network.append(nn.Linear(curr_size, self.output_dim))
-        self.to(device)
+        
+        if torch.cuda.is_available():
+            self.to("cuda")
 
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(
@@ -495,8 +487,7 @@ class LogisticRegression_Head(TorchClassificationHead):
         feat_dim,
         seed=42,
         batch_size=32,
-        device="cpu",
-        epochs=3,
+        epochs=5,
         lr=0.001,
     ):
         super().__init__(
@@ -505,11 +496,12 @@ class LogisticRegression_Head(TorchClassificationHead):
             seed=seed,
             batch_size=batch_size,
             epochs=epochs,
-            device=device,
         )
         self.lr = lr
         self.model = nn.Linear(feat_dim, n_way)
-        self.to(device)
+        
+        if torch.cuda.is_available():
+            self.to("cuda")
 
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = torch.optim.SGD(self.parameters(), lr=self.lr)
@@ -534,6 +526,7 @@ DISPATCHER = {
     "DecisionTree": DecisionTree_Head,
     "RandomForest": RandomForest_Head,
     "GMM": GMM_Head,
+    "RR": RidgeRegression_Head,
 }
 
 
@@ -570,7 +563,6 @@ def to_torch(x, requires_grad=True):
 if __name__ == "__main__":
     print("==== Generating random data =====")
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     n_way = 5
     n_query = 10
     n_support = 5
@@ -596,7 +588,6 @@ if __name__ == "__main__":
         feat_dim=emb_dim,
         seed=42,
         batch_size=32,
-        device=device,
         epochs=500,
         hidden_dims=[512, 256, 64, 32],
         activations=[nn.ReLU(), nn.ReLU(), nn.ReLU(), nn.ReLU()],
@@ -616,7 +607,6 @@ if __name__ == "__main__":
         feat_dim=emb_dim,
         seed=42,
         batch_size=32,
-        device="cpu",
         epochs=5,
         lr=0.001,
     )
