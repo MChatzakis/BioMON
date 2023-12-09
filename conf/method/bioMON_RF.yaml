@@ -12,3 +12,4 @@ cls:
     args:
       n_way: ${n_way}
       seed: 42
+      n_estimators: 100

@@ -1,0 +1,21 @@
+defaults:
+  - meta_base
+
+name: bioMON_MLP
+
+cls:
+  _target_: methods.bio_metaoptnet.BioMetaOptNet
+  n_way: ${n_way}
+  n_support: ${n_shot}
+  head_model_params:
+    model: MLP
+    args:
+      n_way: ${n_way}
+      seed: 42
+      batch_size: 32
+      epochs: 10
+      hidden_dims: [ 512, 256, 64, 32 ]
+      activations: [ none, none, none, none ]
+      dropouts: [ 0.4, 0.4, 0.4, 0.4 ]
+      lr: 0.001
+      weight_decay: 0.00001

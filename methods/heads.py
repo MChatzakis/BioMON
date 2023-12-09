@@ -11,7 +11,7 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.linear_model import Ridge
+from sklearn.linear_model import Ridge, LogisticRegression
 
 
 ###########################################################
@@ -155,7 +155,7 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
 
                 logits = self.forward(X)
                 loss = self.criterion(logits, y)
-                loss.backward()
+                loss.backward(retain_graph=True)
 
                 self.optimizer.step()
 
@@ -343,7 +343,7 @@ class RidgeRegression_Head(ClassicClassificationHead):
 
         # Transform to trainable tensor:
         scores = to_torch(x=scores_raw, requires_grad=True)
-        
+
         return scores
 
 
@@ -359,7 +359,11 @@ class NaiveBayes_Head(ClassicClassificationHead):
 
 class KNN_Head(ClassicClassificationHead):
     def __init__(self, n_way, feat_dim, seed=42, n_neighbors=3):
-        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed,)
+        super().__init__(
+            n_way=n_way,
+            feat_dim=feat_dim,
+            seed=seed,
+        )
 
         self.n_neighbors = n_neighbors
         self.model = KNeighborsClassifier(n_neighbors=n_neighbors)
@@ -414,6 +418,24 @@ class GMM_Head(ClassicClassificationHead):
         self.model.fit(X_train)
 
 
+class LogisticRegression_Head(ClassicClassificationHead):
+    """
+    Multi-class Logistic Regression classification head.
+    """
+
+    def __init__(
+        self,
+        n_way,
+        feat_dim,
+        seed=42,
+        max_iter=100,
+        C=1.0,
+    ):
+        super().__init__(n_way=n_way, feat_dim=feat_dim, seed=seed)
+
+        self.model = LogisticRegression(random_state=seed, max_iter=max_iter, C=C)
+
+
 ##########################################
 #                                        #
 # Classification heads: Neural Networks  #
@@ -459,7 +481,15 @@ class MLP_Head(TorchClassificationHead):
             self.network.append(nn.Linear(curr_size, hidden_dim))
 
             if activations is not None and activations[i] is not None:
-                self.network.append(activations[i])
+                if type(activations[i]) == str:
+                    if activations[i] == "relu":
+                        self.network.append(nn.ReLU())
+                    elif activations[i] == "sigmoid":
+                        self.network.append(nn.Sigmoid())
+                    elif activations[i] == "tanh":
+                        self.network.append(nn.Tanh())
+                else:
+                    self.network.append(activations[i])
 
             if dropouts is not None and dropouts[i] is not None:
                 self.network.append(nn.Dropout(dropouts[i]))
@@ -467,7 +497,7 @@ class MLP_Head(TorchClassificationHead):
             curr_size = hidden_dim
 
         self.network.append(nn.Linear(curr_size, self.output_dim))
-        
+
         if torch.cuda.is_available():
             self.to("cuda")
 
@@ -480,7 +510,7 @@ class MLP_Head(TorchClassificationHead):
         return self.network(x)
 
 
-class LogisticRegression_Head(TorchClassificationHead):
+class LogisticRegressionTorch_Head(TorchClassificationHead):
     def __init__(
         self,
         n_way,
@@ -499,7 +529,7 @@ class LogisticRegression_Head(TorchClassificationHead):
         )
         self.lr = lr
         self.model = nn.Linear(feat_dim, n_way)
-        
+
         if torch.cuda.is_available():
             self.to("cuda")
 

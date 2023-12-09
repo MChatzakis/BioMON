@@ -1,14 +1,16 @@
 defaults:
   - meta_base
 
-name: bioMON_DT
+name: bioMON_LR
 
 cls:
   _target_: methods.bio_metaoptnet.BioMetaOptNet
   n_way: ${n_way}
   n_support: ${n_shot}
   head_model_params:
-    model: DecisionTree
+    model: LogisticRegression
     args:
       n_way: ${n_way}
       seed: 42
+      max_iter: 100
+      C: 1.0
