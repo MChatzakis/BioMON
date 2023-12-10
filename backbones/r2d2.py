@@ -14,12 +14,12 @@ class R2D2(nn.Module):
 
         blocks = []
         in_dim = x_dim
-        for dim in layer_dim - 1:
+        for dim in range(len(layer_dim)-1):
             if self.fast_weight:
-                blocks.append(r2d2_block_fw(in_dim, dim))
+                blocks.append(r2d2_block_fw(in_dim, layer_dim[dim]))
             else:
-                blocks.append(r2d2_block(in_dim, dim))
-            in_dim = dim
+                blocks.append(r2d2_block(in_dim, layer_dim[dim]))
+            in_dim = layer_dim[dim]
 
         self.r2d2_encoder = nn.Sequential(*blocks)
         if self.fast_weight:

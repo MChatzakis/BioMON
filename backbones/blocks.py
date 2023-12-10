@@ -360,7 +360,7 @@ def r2d2_block(in_features, out_features, keep_activation=True, dropout=True):
     if dropout:
       r2d2_layers.append(nn.Dropout(0.3))
 
-    return nn.Sequentila(*r2d2_layers)
+    return nn.Sequential(*r2d2_layers)
 
 def r2d2_block_fw(in_features, out_features, keep_activation=True, dropout=True):
 
@@ -375,7 +375,7 @@ def r2d2_block_fw(in_features, out_features, keep_activation=True, dropout=True)
     if dropout:
       r2d2_layers.append(nn.Dropout(0.3))
 
-    return nn.Sequentila(*r2d2_layers)
+    return nn.Sequential(*r2d2_layers)
 
 
 def glorot(tensor):

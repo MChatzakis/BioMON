@@ -40,6 +40,7 @@ def initialize_dataset_model(cfg):
     val_loader = val_dataset.get_data_loader()
 
     # For MAML (and other optimization-based methods), need to instantiate backbone layers with fast weight
+    #print(f"****HERE-> {train_dataset.dim}, {cfg.backbone}")
     if cfg.method.fast_weight:
         backbone = instantiate(cfg.backbone, x_dim=train_dataset.dim, fast_weight=True)
     else:
