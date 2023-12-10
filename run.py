@@ -16,6 +16,7 @@ from utils.io_utils import (
     get_model_file,
 )
 
+from backbones.resnet import *
 
 def initialize_dataset_model(cfg):
     # Instantiate train dataset as specified in dataset config under simple_cls or set_cls
@@ -45,7 +46,8 @@ def initialize_dataset_model(cfg):
         backbone = instantiate(cfg.backbone, x_dim=train_dataset.dim, fast_weight=True)
     else:
         backbone = instantiate(cfg.backbone, x_dim=train_dataset.dim)
-
+    #backbone = ResNet10(flatten=False)
+    
     # Instantiate few-shot method class
     model = instantiate(cfg.method.cls, backbone=backbone)
 
