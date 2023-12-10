@@ -23,6 +23,25 @@ run_experiments() {
 
     echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
 
+    for method in "maml" "protonet" "matchingnet" "baseline" "baseline_pp"
+    do
+        model_name=${method}.yaml
+        python3 run.py exp.name=final \
+            method=$model_name \
+            model=$backbone_name \
+            dataset=$dataset_name \
+            backbone._target_=$backbone_target \
+            backbone.layer_dim=$layer_dim \
+            n_way=$N_WAY \
+            n_shot=$N_SHOT \
+            n_query=$N_QUERY \
+            iter_num=$EPISODES \
+            method.stop_epoch=$EPOCHS \
+            method.start_epoch=0     
+    done
+
+    exit
+
     for classifier in "DT" "GMM" "KNN" "LR" "MLP" "NB" "RF" "RR" "SVM" 
     do
         model_name=bioMON_${classifier}.yaml
@@ -40,12 +59,6 @@ run_experiments() {
             method.stop_epoch=$EPOCHS \
             method.start_epoch=0 
 
-    done
-
-    for method in "maml" "protonet" "matchingnet" "baseline" "baseline_pp"
-    do
-        model_name=${method}.yaml
-        echo python3 run.py exp.name=final method=$model_name dataset=$dataset_name backbone._target_=$backbone_target backbone.layer_dim=$layer_dim
     done
 
 } 

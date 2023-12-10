@@ -305,6 +305,17 @@ def train_standard(train_loader, val_loader, model, cfg):
             outfile = os.path.join(cp_dir, "{:d}.tar".format(epoch))
             torch.save({"epoch": epoch, "state": model.state_dict()}, outfile)
 
+    if not os.path.isdir(cfg.results.dir):
+        os.makedirs(cfg.results.dir)
+    
+    train_summary_file = open(f"{cfg.results.dir}/train_summary.csv", "w")
+    train_summary_file.write(
+        "total_training_time,\n"
+    )
+    train_summary_file.write(
+        f"{total_training_time},\n"
+    )
+    
     return model, total_training_time
 
 
