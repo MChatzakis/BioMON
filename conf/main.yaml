@@ -29,11 +29,10 @@ checkpoint:
 
 results:
   dir: results/${exp.name}/${dataset.name}/${method.name}_${model}/${n_way}w${n_shot}s${n_query}q
-  time: latest
 
 wandb:
   project: BioMed-DL
   entity: manosxatzakiss2000
   mode: "offline" # Can set to offline, disabled
 
-iter_num: 5
+iter_num: 10
