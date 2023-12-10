@@ -27,6 +27,10 @@ checkpoint:
   test_iter: best_model
   time: latest
 
+results:
+  dir: results/${exp.name}/${dataset.name}/${method.name}_${model}
+  time: latest
+
 wandb:
   project: BioMed-DL
   entity: manosxatzakiss2000
