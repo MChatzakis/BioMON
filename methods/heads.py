@@ -423,11 +423,14 @@ class GMM_Head(ClassicClassificationHead):
         y_test_pred = self.model.predict(X_test)
         test_accuracy = np.mean(y_test_pred.ravel() == y_test.ravel())
 
-        return (-1, test_accuracy)
+        return test_accuracy
 
     def fit(self, support_features, support_labels):
+        
         X_train = support_features.detach().numpy()
+        start_time = time.time()
         self.model.fit(X_train)
+        self.fit_time = time.time() - start_time
 
 
 class LogisticRegression_Head(ClassicClassificationHead):
