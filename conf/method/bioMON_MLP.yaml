@@ -13,9 +13,9 @@ cls:
       n_way: ${n_way}
       seed: 42
       batch_size: 32
-      epochs: 10
-      hidden_dims: [ 512, 256, 64, 32 ]
-      activations: [ none, none, none, none ]
-      dropouts: [ 0.4, 0.4, 0.4, 0.4 ]
+      epochs: 5
+      hidden_dims: [ 512, 256, 64 ]
+      activations: [ none, none, none ]
+      dropouts: [ 0.4, 0.4, 0.4 ]
       lr: 0.001
       weight_decay: 0.00001

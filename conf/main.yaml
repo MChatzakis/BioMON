@@ -32,4 +32,4 @@ wandb:
   entity: manosxatzakiss2000
   mode: "online" # Can set to offline, disabled
 
-iter_num: 3
+iter_num: 5

@@ -165,13 +165,13 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
 
                 self.optimizer.step()
 
-        t_loss, t_acc = self.test(support_features, support_labels)
+        t_acc = self.test(support_features, support_labels)
 
         self.final_train_acc = t_acc
-        self.final_train_loss = t_loss
+        #self.final_train_loss = t_loss
         self.fit_time = time.time() - start_time
         
-        return t_loss, t_acc
+        return t_acc
 
     def test(self, X_test, y_test):
         dataset = TensorDataset(X_test, y_test)
@@ -207,7 +207,7 @@ class TorchClassificationHead(ClassificationHead, nn.Module):
         return self.forward(query_features)
 
     def fit(self, support_features, support_labels):
-        return self.train_model(support_features, support_labels)
+        self.train_model(support_features, support_labels)
 
 
 class ClassicClassificationHead(ClassificationHead):

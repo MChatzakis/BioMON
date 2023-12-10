@@ -65,7 +65,12 @@ class BioMetaOptNet(MetaTemplate):
 
         scores, head_train_acc, head_test_acc, head_fit_time = self.set_forward(x)
 
-        return self.loss_fn(scores, y_query), head_train_acc, head_test_acc, head_fit_time
+        return (
+            self.loss_fn(scores, y_query),
+            head_train_acc,
+            head_test_acc,
+            head_fit_time,
+        )
 
     def correct(self, x):
         scores, head_train_acc, head_test_acc, head_fit_time = self.set_forward(x)
@@ -75,8 +80,21 @@ class BioMetaOptNet(MetaTemplate):
         topk_ind = topk_labels.cpu().numpy()
         top1_correct = np.sum(topk_ind[:, 0] == y_query)
         
-        return float(top1_correct), len(y_query), head_train_acc, head_test_acc, head_fit_time
-    
+        y_query = torch.from_numpy(np.repeat(range(self.n_way), self.n_query))
+        if torch.cuda.is_available():
+            y_query = Variable(y_query.cuda())
+        else:
+            y_query = Variable(y_query)
+        loss = self.loss_fn(scores, y_query)
+
+        return (
+            float(top1_correct),
+            len(y_query),
+            head_train_acc,
+            head_test_acc,
+            head_fit_time,
+            loss.item(),
+        )
 
     def train_loop(self, epoch, train_loader, optimizer):
         print_freq = 10
@@ -97,7 +115,9 @@ class BioMetaOptNet(MetaTemplate):
                 if self.change_way:
                     self.n_way = x.size(0)
             optimizer.zero_grad()
-            loss, head_train_acc, head_test_acc, head_fit_time = self.set_forward_loss(x)
+            loss, head_train_acc, head_test_acc, head_fit_time = self.set_forward_loss(
+                x
+            )
             loss.backward()
             optimizer.step()
 
@@ -125,14 +145,26 @@ class BioMetaOptNet(MetaTemplate):
                 wandb.log({"head_test_acc": avg_head_test_acc / float(i + 1)})
                 wandb.log({"head_fit_time": avg_head_test_acc / float(i + 1)})
 
-        return total_head_fit_time
-        
-        
+        avg_head_train_acc = avg_head_train_acc / len(train_loader)
+        avg_head_test_acc = avg_head_test_acc / len(train_loader)
+        avg_head_fit_time = avg_head_fit_time / len(train_loader)
+        avg_loss = avg_loss / len(train_loader)
+
+        return (
+            avg_loss,
+            avg_head_train_acc,
+            avg_head_test_acc,
+            avg_head_fit_time,
+            total_head_fit_time,
+        )
+
     def test_loop(self, test_loader, record=None, return_std=False):
         correct = 0
         count = 0
+
         acc_all = []
-        
+        loss_all = []
+
         head_train_acc_all = []
         head_test_acc_all = []
         head_fit_time_all = []
@@ -148,9 +180,17 @@ class BioMetaOptNet(MetaTemplate):
                 if self.change_way:
                     self.n_way = x.size(0)
 
-            correct_this, count_this, head_train_acc, head_test_acc, head_fit_time = self.correct(x)
+            (
+                correct_this,
+                count_this,
+                head_train_acc,
+                head_test_acc,
+                head_fit_time,
+                loss,
+            ) = self.correct(x)
             acc_all.append(correct_this / count_this * 100)
-            
+
+            loss_all.append(loss)
             head_train_acc_all.append(head_train_acc)
             head_test_acc_all.append(head_test_acc)
             head_fit_time_all.append(head_fit_time)
@@ -163,21 +203,46 @@ class BioMetaOptNet(MetaTemplate):
             "%d Test Acc = %4.2f%% +- %4.2f%%"
             % (iter_num, acc_mean, 1.96 * acc_std / np.sqrt(iter_num))
         )
-        
+
         head_train_acc_all = np.asarray(head_train_acc_all)
         head_test_acc_all = np.asarray(head_test_acc_all)
         head_fit_time_all = np.asarray(head_fit_time_all)
-        
+
         head_train_acc_mean = np.mean(head_train_acc_all)
         head_train_acc_std = np.std(head_train_acc_all)
-        
+
         head_test_acc_mean = np.mean(head_test_acc_all)
         head_test_acc_std = np.std(head_test_acc_all)
-        
+
         head_fit_time_mean = np.mean(head_fit_time_all)
         head_fit_time_std = np.std(head_fit_time_all)
 
+        loss_all = np.asarray(loss_all)
+        loss_mean = np.mean(loss_all)
+        loss_std = np.std(loss_all)
+
+        total_head_fit_time = np.sum(head_fit_time_all)
+
         if return_std:
-            return acc_mean, acc_std, head_train_acc_mean, head_train_acc_std, head_test_acc_mean, head_test_acc_std, head_fit_time_mean, head_fit_time_std
+            return (
+                acc_mean,
+                acc_std,
+                head_train_acc_mean,
+                head_train_acc_std,
+                head_test_acc_mean,
+                head_test_acc_std,
+                head_fit_time_mean,
+                head_fit_time_std,
+                loss_mean,
+                loss_std,
+                total_head_fit_time,
+            )
         else:
-            return acc_mean, head_train_acc_mean, head_test_acc_mean, head_fit_time_mean
+            return (
+                acc_mean,
+                head_train_acc_mean,
+                head_test_acc_mean,
+                head_fit_time_mean,
+                loss_mean,
+                total_head_fit_time,
+            )
