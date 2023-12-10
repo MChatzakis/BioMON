@@ -91,10 +91,11 @@ def run_standard(cfg, train_loader, val_loader, model):
         testing_time = time.time() - start_time
         results.append([split, acc_mean, acc_std, f"{testing_time:.2f}"])
 
+    if not os.path.isdir(cfg.results.dir):
+        os.makedirs(cfg.results.dir)
+        
     test_summary_file = open(f"{cfg.results.dir}/test_summary.csv", "w")
-    test_summary_file.write(
-        "split,acc_mean,acc_std,testing_time\n"
-    )
+    test_summary_file.write("split,acc_mean,acc_std,testing_time\n")
     for row in results:
         test_summary_file.write(f"{row[0]},{row[1]},{row[2]},{row[3]}\n")
     test_summary_file.close()
@@ -150,7 +151,7 @@ def run_bioMON(cfg, train_loader, val_loader, model):
         print(display_table)
 
     results = []
-    detailed_results =  []
+    detailed_results = []
     print("Checkpoint directory:", cfg.checkpoint.dir)
     for split in cfg.eval_split:
         start_time = time.time()
@@ -166,7 +167,7 @@ def run_bioMON(cfg, train_loader, val_loader, model):
             total_head_fit_time,
         ) = test_bioMON(cfg, model, split)
         testing_time = time.time() - start_time
-        
+
         results.append(
             [
                 split,
@@ -178,7 +179,7 @@ def run_bioMON(cfg, train_loader, val_loader, model):
                 testing_time,
             ]
         )
-        
+
         detailed_results.append(
             [
                 split,
@@ -195,15 +196,16 @@ def run_bioMON(cfg, train_loader, val_loader, model):
             ]
         )
 
-    
     test_summary_file = open(f"{cfg.results.dir}/test_summary.csv", "w")
     test_summary_file.write(
         "split,acc_mean,acc_std,head_support_acc_mean,head_support_acc_std,head_query_acc_mean,head_query_acc_std,head_fit_time_mean,head_fit_time_std,total_head_fit_time,testing_time\n"
     )
     for row in detailed_results:
-        test_summary_file.write(f"{row[0]},{row[1]},{row[2]},{row[3]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]},{row[9]},{row[10]}\n")
+        test_summary_file.write(
+            f"{row[0]},{row[1]},{row[2]},{row[3]},{row[4]},{row[5]},{row[6]},{row[7]},{row[8]},{row[9]},{row[10]}\n"
+        )
     test_summary_file.close()
-    
+
     print(f"Detailed results logged to {cfg.results.dir}/test_summary.csv")
     print(f"Single line results logged to ./checkpoints/{cfg.exp.name}/results.txt")
 
@@ -552,8 +554,6 @@ def test_bioMON(cfg, model, split):
             "Time: %s, Setting: %s, Acc: %s, Model: %s \n"
             % (timestamp, exp_setting, acc_str, model_file)
         )
-    
-    
 
     return (
         acc_mean,
