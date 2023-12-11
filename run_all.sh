@@ -5,7 +5,7 @@
 N_WAY=5
 N_SHOT=5
 N_QUERY=15
-EPOCHS=40
+EPOCHS=30
 EPISODES=100
 
 echo "========= BioMON Experiment Script ========="
