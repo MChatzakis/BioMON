@@ -169,9 +169,9 @@ echo ""
 echo "========= Running all experiments for tabula_muris ========="
 fcnet_layer_dim=[64,64]
 # run_benchmark_algorithms "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
 # run_bioMON_MLP "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
 echo ""
 
