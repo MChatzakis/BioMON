@@ -1,7 +1,7 @@
 defaults:
   - meta_base
 
-name: bioMON_RF
+name: bioMON_RF100
 
 cls:
   _target_: methods.bio_metaoptnet.BioMetaOptNet

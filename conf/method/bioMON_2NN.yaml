@@ -1,7 +1,7 @@
 defaults:
   - meta_base
 
-name: bioMON_KNN
+name: bioMON_2NN
 
 cls:
   _target_: methods.bio_metaoptnet.BioMetaOptNet
