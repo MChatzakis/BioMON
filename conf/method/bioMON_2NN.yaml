@@ -1,0 +1,15 @@
+defaults:
+  - meta_base
+
+name: bioMON_KNN
+
+cls:
+  _target_: methods.bio_metaoptnet.BioMetaOptNet
+  n_way: ${n_way}
+  n_support: ${n_shot}
+  head_model_params:
+    model: KNN
+    args:
+      n_way: ${n_way}
+      seed: 42
+      n_neighbors: 2

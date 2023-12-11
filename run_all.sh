@@ -5,8 +5,8 @@
 N_WAY=5
 N_SHOT=5
 N_QUERY=15
-EPOCHS=5
-EPISODES=2
+EPOCHS=40
+EPISODES=100
 
 echo "========= BioMON Experiment Script ========="
 echo ">> This script runs all the experiments performed for BioMON. It is recommended to run this script on a server with a GPU."
@@ -15,7 +15,7 @@ echo ">> Note: Make sure you have Swissprot downloaded and unzipped in the data 
 echo ">> Epochs: $EPOCHS, Episodes: $EPISODES, N-way: $N_WAY, N-shot: $N_SHOT, N-query: $N_QUERY"
 echo ""
 
-run_experiments() {
+run_benchmark_algorithms(){
     dataset_name=$1
     backbone_name=$2
     backbone_target=$3
@@ -39,10 +39,17 @@ run_experiments() {
             method.stop_epoch=$EPOCHS \
             method.start_epoch=0     
     done
+}
 
-    exit
+run_bioMON_simple_classifiers(){
+    dataset_name=$1
+    backbone_name=$2
+    backbone_target=$3
+    layer_dim=$4
 
-    for classifier in "DT" "GMM" "KNN" "LR" "MLP" "NB" "RF" "RR" "SVM" 
+    echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
+
+    for classifier in "SVM" "LR" "DT" "NB" "GMM" 
     do
         model_name=bioMON_${classifier}.yaml
         
@@ -60,25 +67,113 @@ run_experiments() {
             method.start_epoch=0 
 
     done
+}
 
+run_bioMON_KNN() {
+    
+    dataset_name=$1
+    backbone_name=$2
+    backbone_target=$3
+    layer_dim=$4
+
+    echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
+
+    for classifier in "1NN" "2NN" "3NN" "4NN" "5NN"
+    do
+        model_name=bioMON_${classifier}.yaml
+        
+        python3 run.py exp.name=final \
+            method=$model_name \
+            model=$backbone_name \
+            dataset=$dataset_name \
+            backbone._target_=$backbone_target \
+            backbone.layer_dim=$layer_dim \
+            n_way=$N_WAY \
+            n_shot=$N_SHOT \
+            n_query=$N_QUERY \
+            iter_num=$EPISODES \
+            method.stop_epoch=$EPOCHS \
+            method.start_epoch=0 
+
+    done
 } 
 
-# Start the experiments
-echo "========= Running all experiments ========="
+run_bioMON_RF() {
+    dataset_name=$1
+    backbone_name=$2
+    backbone_target=$3
+    layer_dim=$4
 
-#
-# Part1: FCNET Backbone
-#
-# 
+    echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
+
+    for classifier in "RF10" "RF50" "RF100" "RF200"
+    do
+        model_name=bioMON_${classifier}.yaml
+        
+        python3 run.py exp.name=final \
+            method=$model_name \
+            model=$backbone_name \
+            dataset=$dataset_name \
+            backbone._target_=$backbone_target \
+            backbone.layer_dim=$layer_dim \
+            n_way=$N_WAY \
+            n_shot=$N_SHOT \
+            n_query=$N_QUERY \
+            iter_num=$EPISODES \
+            method.stop_epoch=$EPOCHS \
+            method.start_epoch=0 
+
+    done
+}
+
+run_bioMON_MLP() {
+    dataset_name=$1
+    backbone_name=$2
+    backbone_target=$3
+    layer_dim=$4
+
+    echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
+
+    for classifier in ""
+    do
+        model_name=bioMON_${classifier}.yaml
+        
+        python3 run.py exp.name=final \
+            method=$model_name \
+            model=$backbone_name \
+            dataset=$dataset_name \
+            backbone._target_=$backbone_target \
+            backbone.layer_dim=$layer_dim \
+            n_way=$N_WAY \
+            n_shot=$N_SHOT \
+            n_query=$N_QUERY \
+            iter_num=$EPISODES \
+            method.stop_epoch=$EPOCHS \
+            method.start_epoch=0 
+
+    done
+}
+
 fcnet_target=backbones.fcnet.FCNet
+fcnet_name=FCNet
+
+echo "========= Running all experiments for Swissprot ========="
 fcnet_layer_dim=[512,512]
+run_benchmark_algorithms "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+echo ""
 
-run_experiments "tabula_muris" "FCNET" $fcnet_target $fcnet_layer_dim
-#run_experiments "swissprot" $fcnet_target $fcnet_layer_dim
-
-echo ">>FCNET Backbone experiments completed."
-
-
+echo "========= Running all experiments for tabula_muris ========="
+fcnet_layer_dim=[64,64]
+run_benchmark_algorithms "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_MLP "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+echo ""
 
 echo ""
 echo "========= Script completed. Reporting. ========="

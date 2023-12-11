@@ -22,7 +22,7 @@ class ProtoNet(MetaTemplate):
 
         dists = euclidean_dist(z_query, z_proto)
         scores = -dists
-        print(f"scores shape: {scores.shape}")
+        #print(f"scores shape: {scores.shape}")
 
         return scores
 
