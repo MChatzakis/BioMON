@@ -70,7 +70,11 @@ class SPSetDataset(SPDataset):
         self.encoder = encodings(self.data_dir)
 
         samples_all= self.load_swissprot(mode = mode, min_samples = min_samples)
-
+        
+        # From the forum.
+        self.categories = get_ids(samples_all)
+        if 'GO:0042773' in self.categories:
+            self.categories.remove('GO:0042773')
 
         self.categories = get_ids(samples_all) # Unique annotations
         self.x_dim = PROTDIM
