@@ -159,11 +159,11 @@ fcnet_name=FCNet
 
 echo "========= Running all experiments for Swissprot ========="
 fcnet_layer_dim=[512,512]
-# run_benchmark_algorithms "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-# run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-# run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-# run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-# run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_benchmark_algorithms "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 echo ""
 
 echo "========= Running all experiments for tabula_muris ========="

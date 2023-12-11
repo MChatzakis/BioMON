@@ -12,6 +12,6 @@ cls:
     args:
       n_way: ${n_way}
       seed: 42
-      kernel: poly
+      kernel: linear
       C: 1
       probability: true
