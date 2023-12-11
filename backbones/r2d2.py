@@ -5,11 +5,11 @@ import torch.nn.functional as F
 from backbones.blocks import r2d2_block_fw, r2d2_block
 
     
-class R2D2_2(nn.Module):
+class R2D2(nn.Module):
     fast_weight = False  # Default
 
     def __init__(self, x_dim, layer_dim=[96, 192, 384, 512], fast_weight=False):
-        super(R2D2_2, self).__init__()
+        super(R2D2, self).__init__()
         self.fast_weight = fast_weight
 
         blocks = []
