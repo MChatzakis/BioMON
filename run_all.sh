@@ -6,7 +6,7 @@ N_WAY=5
 N_SHOT=5
 N_QUERY=15
 EPOCHS=30
-EPISODES=100
+EPISODES=50
 
 echo "========= BioMON Experiment Script ========="
 echo ">> This script runs all the experiments performed for BioMON. It is recommended to run this script on a server with a GPU."
@@ -160,18 +160,18 @@ fcnet_name=FCNet
 echo "========= Running all experiments for Swissprot ========="
 fcnet_layer_dim=[512,512]
 run_benchmark_algorithms "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 # run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 echo ""
 
 echo "========= Running all experiments for tabula_muris ========="
 fcnet_layer_dim=[64,64]
 run_benchmark_algorithms "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
 # run_bioMON_MLP "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
 echo ""
 

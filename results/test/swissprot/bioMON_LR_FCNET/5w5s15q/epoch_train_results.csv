@@ -1,2 +1,0 @@
-epoch,train_loss,val_loss,val_acc,val_head_support_acc,val_head_query_acc
-0,0.9602084199805507,0.8807398444142565,69.73333333333333,1.0,0.6973333333333335
