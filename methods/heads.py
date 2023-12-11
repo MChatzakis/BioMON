@@ -227,7 +227,7 @@ class ClassicClassificationHead(ClassificationHead):
         self.model = None
 
     def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
+        x_test = query_features.cpu().numpy()
         probabilities = np.array(self.model.predict_proba(x_test))
 
         # Generate logits from probabilities:
@@ -240,15 +240,15 @@ class ClassicClassificationHead(ClassificationHead):
         return scores
 
     def fit(self, support_features, support_labels):
-        X_train = support_features.detach().numpy()
-        y_train = support_labels.detach().numpy()
+        X_train = support_features.cpu().numpy()
+        y_train = support_labels.cpu().numpy()
         start_time = time.time()
         self.model.fit(X_train, y_train)
         self.fit_time = time.time() - start_time
 
     def test(self, X_test, y_test):
-        X_test = X_test.detach().numpy()
-        y_test = y_test.detach().numpy()
+        X_test = X_test.cpu().numpy()
+        y_test = y_test.cpu().numpy()
         return self.model.score(X_test, y_test)
 
     def _get_logit_from_probs(self, probabilities):
@@ -311,7 +311,7 @@ class SVM_Head(ClassicClassificationHead):
         )
 
     def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
+        x_test = query_features.cpu().numpy()
         scores_raw = self.model.decision_function(x_test)
 
         # Transform to trainable tensor:
@@ -349,7 +349,7 @@ class RidgeRegression_Head(ClassicClassificationHead):
         self.model = Ridge(alpha=alpha, fit_intercept=fit_intercept, solver=solver)
 
     def get_logits(self, query_features):
-        x_test = query_features.detach().numpy()
+        x_test = query_features.cpu().numpy()
         scores_raw = self.model.predict(x_test)
 
         # Transform to trainable tensor:
@@ -417,8 +417,8 @@ class GMM_Head(ClassicClassificationHead):
         )
 
     def test(self, X_test, y_test):
-        X_test = X_test.detach().numpy()
-        y_test = y_test.detach().numpy()
+        X_test = X_test.cpu().numpy()
+        y_test = y_test.cpu().numpy()
 
         y_test_pred = self.model.predict(X_test)
         test_accuracy = np.mean(y_test_pred.ravel() == y_test.ravel())
@@ -427,7 +427,7 @@ class GMM_Head(ClassicClassificationHead):
 
     def fit(self, support_features, support_labels):
         
-        X_train = support_features.detach().numpy()
+        X_train = support_features.cpu().numpy()
         start_time = time.time()
         self.model.fit(X_train)
         self.fit_time = time.time() - start_time
