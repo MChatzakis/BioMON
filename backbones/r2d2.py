@@ -1,20 +1,14 @@
-    import torch
+import torch
 from torch import nn as nn
 import torch.nn.functional as F
 
 from backbones.blocks import r2d2_block_fw, r2d2_block
 
-def find_factors(number):
-    factors = []
-    for i in range(1, int(number**0.5) + 1):
-        if number % i == 0:
-            factors.append((i, number // i))
-    return factors[-1]
     
 class R2D2_2(nn.Module):
     fast_weight = False  # Default
 
-    def __init__(self, x_dim=1, layer_dim=[96, 192, 384, 512], fast_weight=False):
+    def __init__(self, x_dim, layer_dim=[96, 192, 384, 512], fast_weight=False):
         super(R2D2_2, self).__init__()
         self.fast_weight = fast_weight
 
@@ -43,11 +37,11 @@ class R2D2_2(nn.Module):
 
     def forward(self, x):
 
-        height , width = find_factors(x.shape[1]) # reshaping the features into a 2D image with dimensions (factor1, factor2) based on the factor pairs of the original feature count
-        x = x.reshape(x.shape[0],1, height, width) #batch_size,channels,height,width
+        x = x.view(1, x.shape[0], -1)
+        x = x.permute(1, 2, 0)
 
         x_1 = self.r2d2_encoder(x)
         x_2 = self.last_block(x_1)
-
-        #output shape is (384*H_out*W_out) from the decoder + (512*H_out*W_out) from the last block
+ 
+        #output shape is (384) from the decoder + (512) from the last block
         return torch.cat((x_1.view(x_1.size(0), -1), x_2.view(x_2.size(0), -1)), 1)

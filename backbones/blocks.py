@@ -350,13 +350,13 @@ def full_block(in_features, out_features, dropout):
 def r2d2_block(in_features, out_features, keep_activation=True, dropout=True):
 
     r2d2_layers = [ 
-        nn.Conv2d(in_features, out_features,kernel_size=3,padding=1),
-        nn.BatchNorm2d(out_features),
-        nn.MaxPool2d(2)
+        nn.Conv1d(in_features, out_features,1,bias=True),
+        nn.BatchNorm1d(out_features),
+        nn.MaxPool1d(1)
     ]
     if keep_activation:
       r2d2_layers.append(nn.LeakyReLU(0.1))
-    
+
     if dropout:
       r2d2_layers.append(nn.Dropout(0.3))
 
@@ -365,9 +365,9 @@ def r2d2_block(in_features, out_features, keep_activation=True, dropout=True):
 def r2d2_block_fw(in_features, out_features, keep_activation=True, dropout=True):
 
     r2d2_layers = [ 
-        nn.Conv2d_fw(in_features, out_features,kernel_size=3,padding=1),
-        nn.BatchNorm2d_fw(out_features),
-        nn.MaxPool2d(2)
+        nn.Conv1d_fw(in_features, out_features,1,bias=True),
+        nn.BatchNorm1d_fw(out_features),
+        nn.MaxPool1d(1)
     ]
     if keep_activation:
       r2d2_layers.append(nn.LeakyReLU(0.1))
