@@ -7,6 +7,7 @@ N_SHOT=5
 N_QUERY=15
 EPOCHS=30
 EPISODES=50
+EXP_NAME=final
 
 echo "========= BioMON Experiment Script ========="
 echo ">> This script runs all the experiments performed for BioMON. It is recommended to run this script on a server with a GPU."
@@ -26,7 +27,7 @@ run_benchmark_algorithms(){
     for method in "maml" "protonet" "matchingnet" "baseline" "baseline_pp"
     do
         model_name=${method}.yaml
-        python3 run.py exp.name=final \
+        python3 run.py exp.name=$EXP_NAME \
             method=$model_name \
             model=$backbone_name \
             dataset=$dataset_name \
@@ -53,7 +54,7 @@ run_bioMON_simple_classifiers(){
     do
         model_name=bioMON_${classifier}.yaml
         
-        python3 run.py exp.name=final \
+        python3 run.py exp.name=$EXP_NAME \
             method=$model_name \
             model=$backbone_name \
             dataset=$dataset_name \
@@ -82,7 +83,7 @@ run_bioMON_KNN() {
     do
         model_name=bioMON_${classifier}.yaml
         
-        python3 run.py exp.name=final \
+        python3 run.py exp.name=$EXP_NAME \
             method=$model_name \
             model=$backbone_name \
             dataset=$dataset_name \
@@ -110,7 +111,7 @@ run_bioMON_RF() {
     do
         model_name=bioMON_${classifier}.yaml
         
-        python3 run.py exp.name=final \
+        python3 run.py exp.name=$EXP_NAME \
             method=$model_name \
             model=$backbone_name \
             dataset=$dataset_name \
@@ -138,7 +139,7 @@ run_bioMON_MLP() {
     do
         model_name=bioMON_${classifier}.yaml
         
-        python3 run.py exp.name=final \
+        python3 run.py exp.name=$EXP_NAME \
             method=$model_name \
             model=$backbone_name \
             dataset=$dataset_name \
