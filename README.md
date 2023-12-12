@@ -63,21 +63,17 @@ python3 run.py exp.name={name} \
             method.start_epoch={n_way}     
 ```
 In case any of those parameters are not used, the default parameters (found in corresponding files of conf/ directory will be used).
+
+
 An example of the run is
 ```bash
-python3 run.py exp.name={name} \
-            method={method} \
-            model={backbone_name} \
-            dataset={dataset} \
-            backbone._target_={backbone_class}\
-            backbone.layer_dim={backbone_layers} \
-            n_way={n_way} \
-            n_shot={n_way} \
-            n_query={n_way} \
-            iter_num={n_way} \
-            method.stop_epoch={n_way} \
-            method.start_epoch={n_way}     
+python run.py exp.name=random_test method=bioMON_LR dataset=tabula_muris backbone._target_=backbones.r2d2.R2D2 backbone.layer_dim=[64,64] n_way=5 n_shot=5 n_query=15 iter_num=100 method.stop_epoch=30 method.start_epoch=0 
 ```
+The above command will run train 30 epochs of BioMON with a Logistic Regression classifier on the Tabula Muris dataset, using a 2-layer R2D2 embedding, for 5-way 15-shot learning with 15 queries per episode. The results will be saved under results/random_test/tabula_muris/.
+
+In order to explicitely test a model (not train), an additional argument mode=test should be used for run.py.
+
+
 
 
 ## About

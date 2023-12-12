@@ -38,7 +38,7 @@ run_benchmark_algorithms(){
             n_query=$N_QUERY \
             iter_num=$EPISODES \
             method.stop_epoch=$EPOCHS \
-            method.start_epoch=0     
+            method.start_epoch=0
     done
 }
 
