@@ -74,7 +74,7 @@ The available methods for the method argument of run.py are summarized below.
 ## Experiment Tracking
 
 We use [Weights and Biases](https://wandb.ai/) (WandB) for tracking experiments and results during training. 
-All hydra configurations, as well as training loss, validation accuracy, and post-train eval results are logged.
+All hydra configurations, as well as training loss, validation accuracy, and post-train eval results are logged. For more on Hydra, see [their tutorial](https://hydra.cc/docs/intro/). For an example of a benchmark that uses Hydra for configuration management, see [BenchMD](https://github.com/rajpurkarlab/BenchMD).
 To disable WandB, use `wandb.mode=disabled`. 
 
 You must update the `project` and `entity` fields in `conf/main.yaml` to your own project and entity after creating one on WandB.
