@@ -53,7 +53,7 @@ python run.py exp.name=random_test method=bioMON_LR dataset=tabula_muris model=R
 ```
 The above command will run train 30 epochs of BioMON with a Logistic Regression classifier on the Tabula Muris dataset, using a 2-layer R2D2 embedding, for 5-way 15-shot learning with 15 queries per episode. The results will be saved under results/random_test/tabula_muris/.
 
-In order to explicitely test a model (not train), an additional argument mode=test should be used for run.py.
+In order to explicitely test a model (not train), an additional argument `mode=test` should be used for run.py. Also, we use Wandb for experiment tracking. To set it, see the corresponding [section](there). To disable it, use `wandb.mode=disabled`
 
 The available methods for the method argument of run.py are summarized below.
 
@@ -70,6 +70,16 @@ The available methods for the method argument of run.py are summarized below.
 | bioMON_NB | BioMON with Naive Bayes |
 | bioMON_RF{n}| BioMON with a Random Forest of various estimators, specified with n, for 10,50,100,200 |
 | bioMON_SVM | BioMON with SVM |
+
+## Experiment Tracking
+
+We use [Weights and Biases](https://wandb.ai/) (WandB) for tracking experiments and results during training. 
+All hydra configurations, as well as training loss, validation accuracy, and post-train eval results are logged.
+To disable WandB, use `wandb.mode=disabled`. 
+
+You must update the `project` and `entity` fields in `conf/main.yaml` to your own project and entity after creating one on WandB.
+
+To log in to WandB, run `wandb login` and enter the API key provided on the website for your account.
 
 
 ## About
