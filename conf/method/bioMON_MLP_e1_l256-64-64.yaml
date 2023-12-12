@@ -1,7 +1,7 @@
 defaults:
   - meta_base
 
-name: bioMON_MLP-
+name: bioMON_MLP_e1_l256-64-64
 
 cls:
   _target_: methods.bio_metaoptnet.BioMetaOptNet
@@ -12,10 +12,10 @@ cls:
     args:
       n_way: ${n_way}
       seed: 42
-      batch_size: 32
-      epochs: 5
-      hidden_dims: [ 512, 256, 64 ]
-      activations: [ none, none, none ]
+      batch_size: 4
+      epochs: 1
+      hidden_dims: [ 256, 64, 64 ]
+      activations: [ relu, relu, relu ]
       dropouts: [ 0.4, 0.4, 0.4 ]
       lr: 0.001
       weight_decay: 0.00001

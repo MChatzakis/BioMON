@@ -135,24 +135,27 @@ run_bioMON_MLP() {
 
     echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
 
-    for classifier in ""
+    for epoch in "1" "5" "10" "15"
     do
-        model_name=bioMON_${classifier}.yaml
-        
-        python3 run.py exp.name=$EXP_NAME \
-            method=$model_name \
-            model=$backbone_name \
-            dataset=$dataset_name \
-            backbone._target_=$backbone_target \
-            backbone.layer_dim=$layer_dim \
-            n_way=$N_WAY \
-            n_shot=$N_SHOT \
-            n_query=$N_QUERY \
-            iter_num=$EPISODES \
-            method.stop_epoch=$EPOCHS \
-            method.start_epoch=0 
+        for layer in "512-256-128-64" "256-64-64" "128-64"
+        do
+            model_name=bioMON_MLP_e${epoch}_l${layer}.yaml
 
+            python3 run.py exp.name=$EXP_NAME \
+                method=$model_name \
+                model=$backbone_name \
+                dataset=$dataset_name \
+                backbone._target_=$backbone_target \
+                backbone.layer_dim=$layer_dim \
+                n_way=$N_WAY \
+                n_shot=$N_SHOT \
+                n_query=$N_QUERY \
+                iter_num=$EPISODES \
+                method.stop_epoch=$EPOCHS \
+                method.start_epoch=0 
+        done
     done
+
 }
 
 fcnet_target=backbones.fcnet.FCNet
@@ -165,17 +168,17 @@ echo "========= Running all experiments for Swissprot ========="
 fcnet_layer_dim=[512,512]
 r2d2_layer_dim=[512,512]
 
-run_benchmark_algorithms "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-# run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_benchmark_algorithms "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 
-run_benchmark_algorithms "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_simple_classifiers "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_KNN "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_RF "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
-# run_bioMON_MLP "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_benchmark_algorithms "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_simple_classifiers "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_KNN "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_RF "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
+run_bioMON_MLP "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
 echo ""
 
 echo "========= Running all experiments for tabula_muris ========="
@@ -186,7 +189,7 @@ r2d2_layer_dim=[64,64]
 # run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
 # run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
 # run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-# run_bioMON_MLP "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim # Pending
+#run_bioMON_MLP "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim # Pending
 
 # run_benchmark_algorithms "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
 # run_bioMON_simple_classifiers "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
