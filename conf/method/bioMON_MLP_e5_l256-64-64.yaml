@@ -12,7 +12,7 @@ cls:
     args:
       n_way: ${n_way}
       seed: 42
-      batch_size: 32
+      batch_size: 4
       epochs: 5
       hidden_dims: [ 256, 64, 64 ]
       activations: [ relu, relu, relu ]

@@ -135,7 +135,7 @@ run_bioMON_MLP() {
 
     echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
 
-    for epoch in "1" "5" "10" 
+    for epoch in "1" "5" "10" "15"
     do
         for layer in "512-256-128-64" "256-64-64" "128-64"
         do
