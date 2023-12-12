@@ -365,7 +365,7 @@ def r2d2_block(in_features, out_features, keep_activation=True, dropout=True):
 def r2d2_block_fw(in_features, out_features, keep_activation=True, dropout=True):
 
     r2d2_layers = [ 
-        nn.Conv1d_fw(in_features, out_features,1,bias=True),
+        Conv1d_fw(in_features, out_features,1,bias=True),
         nn.BatchNorm1d_fw(out_features),
         nn.MaxPool1d(1)
     ]
