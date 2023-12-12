@@ -37,43 +37,39 @@ Here we provide important information of how the project is organized, and how t
 The repository uses hydra to operate. All the configurations needed, included hyperparameters and which methods are used can be found under the conf/ directory. 
 
 ### Provided Methods
-We provide various classifiers available, from classic ML methods (Logistic Regression, SVMs, ...) to Deep Learning Neural Networks. All classifiers are available at [heads.py](aaa). BioMON supports two embedding methods, [FCNet](cite) and and [R2D2](cite), available under backbones/ directory. In addition, we provide other few-shot learning methods serving as competitors, summarized below:
-
-| Method      | Source                             | 
-|--------------|----------------------------------|
-| Baseline, Baseline++ | [Chen et al. (2019)](https://arxiv.org/pdf/1904.04232.pdf) |
-| ProtoNet | [Snell et al. (2017)](https://proceedings.neurips.cc/paper_files/paper/2017/file/cb8da6767461f2812ae4290eac7cbc42-Paper.pdf) |
-| MatchingNet | [Vinyals et al. (2016)](https://proceedings.neurips.cc/paper/2016/file/90e1357833654983612fb05e3ec9148c-Paper.pdf) |
-| MAML | [Finn et al. (2017)](https://proceedings.mlr.press/v70/finn17a/finn17a.pdf) |
+We provide various classifiers available, from classic ML methods (Logistic Regression, SVMs, ...) to Deep Learning Neural Networks. All classifiers are available at [heads.py](aaa). BioMON supports two embedding methods, [FCNet](cite) and and [R2D2](cite), available under backbones/ directory. In addition, we provide other few-shot learning methods serving as competitors, such as Protonet[Snell et al. (2017)](https://proceedings.neurips.cc/paper_files/paper/2017/file/cb8da6767461f2812ae4290eac7cbc42-Paper.pdf), MAML[Finn et al. (2017)](https://proceedings.mlr.press/v70/finn17a/finn17a.pdf), MatchingNet[Vinyals et al. (2016)](https://proceedings.neurips.cc/paper/2016/file/90e1357833654983612fb05e3ec9148c-Paper.pdf), and Baselines[Chen et al. (2019)](https://arxiv.org/pdf/1904.04232.pdf):
 
 ### Custom Training and Testing
 To directly test or train BioMON or any of the competitors, the [run.py](aa) file shall be used. To run it, use:
 ```bash
-python3 run.py exp.name={name} \
-            method={method} \
-            model={backbone_name} \
-            dataset={dataset} \
-            backbone._target_={backbone_class}\
-            backbone.layer_dim={backbone_layers} \
-            n_way={n_way} \
-            n_shot={n_way} \
-            n_query={n_way} \
-            iter_num={n_way} \
-            method.stop_epoch={n_way} \
-            method.start_epoch={n_way}     
+python3 run.py exp.name={name} method={method} model={backbone_name} dataset={dataset} backbone._target_={backbone_class} backbone.layer_dim={backbone_layers} n_way={n_way} n_shot={n_shot} n_query={n_query} iter_num={episodes} method.stop_epoch={stop_epoch} method.start_epoch={start_epoch}     
 ```
 In case any of those parameters are not used, the default parameters (found in corresponding files of conf/ directory will be used).
 
 
 An example of the run is
 ```bash
-python run.py exp.name=random_test method=bioMON_LR dataset=tabula_muris backbone._target_=backbones.r2d2.R2D2 backbone.layer_dim=[64,64] n_way=5 n_shot=5 n_query=15 iter_num=100 method.stop_epoch=30 method.start_epoch=0 
+python run.py exp.name=random_test method=bioMON_LR dataset=tabula_muris model=R2D2 backbone._target_=backbones.r2d2.R2D2 backbone.layer_dim=[64,64] n_way=5 n_shot=5 n_query=15 iter_num=100 method.stop_epoch=30 method.start_epoch=0 
 ```
 The above command will run train 30 epochs of BioMON with a Logistic Regression classifier on the Tabula Muris dataset, using a 2-layer R2D2 embedding, for 5-way 15-shot learning with 15 queries per episode. The results will be saved under results/random_test/tabula_muris/.
 
 In order to explicitely test a model (not train), an additional argument mode=test should be used for run.py.
 
+The available methods for the method argument of run.py are summarized below.
 
+| Method      | Description                             | 
+|--------------|----------------------------------|
+| baseline, baseline_pp | Baseline implementations (competitors) |
+| protonet | Protonet implementation (competitor) |
+| matchingnet | MatchingNet implementation (competitor) |
+| maml | MAML implementation (competitor) |
+| bioMON_{k}NN | BioMON with KNN, for specific k value from 1-5 |
+| bioMON_DT | BioMON with Decision Tree |
+| bioMON_GNN | BioMON with a classification variation of Gaussian Mixture Model |
+| bioMON_LR | BioMON with Logistic Regression |
+| bioMON_NB | BioMON with Naive Bayes |
+| bioMON_RF{n}| BioMON with a Random Forest of various estimators, specified with n, for 10,50,100,200 |
+| bioMON_SVM | BioMON with SVM |
 
 
 ## About
