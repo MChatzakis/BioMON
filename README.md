@@ -4,9 +4,13 @@ BioMON is a Few-shot Meta-learning architecture that employs various classifiers
 
 ## Quick Start
 
-We provide an environment with all the packages needed, supported using conda. Create and activate it using
+We provide an environment with all the packages needed, supported using conda. Create it using
 ```bash
 conda env create -f environment.yml
+```
+
+The environment can be activated using 
+```bash
 conda activate few-shot-benchmark
 ```
 
