@@ -1,4 +1,0 @@
-split,acc_mean,acc_std,testing_time
-train,52.0,0.0,76.54
-val,69.33333333333334,0.0,36.71
-test,52.0,0.0,30.57
