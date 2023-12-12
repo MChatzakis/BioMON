@@ -33,6 +33,6 @@ results:
 wandb:
   project: BioMed-DL
   entity: manosxatzakiss2000
-  mode: "offline" # Can set to offline, disabled
+  mode: "disabled" # Can set to offline, disabled
 
 iter_num: 1
