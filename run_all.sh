@@ -49,7 +49,7 @@ run_bioMON_simple_classifiers(){
 
     echo "  Dataset: $dataset_name, Backbone: ($backbone_target, $layer_dim)"
 
-    for classifier in "SVM" #"LR" "DT" "NB" "GMM" 
+    for classifier in "SVM" "LR" "DT" "NB" "GMM" 
     do
         model_name=bioMON_${classifier}.yaml
         
@@ -168,30 +168,30 @@ run_benchmark_algorithms "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 run_bioMON_simple_classifiers "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 run_bioMON_KNN "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 run_bioMON_RF "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
-run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_MLP "swissprot" $fcnet_name $fcnet_target $fcnet_layer_dim
 
 run_benchmark_algorithms "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
 run_bioMON_simple_classifiers "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
 run_bioMON_KNN "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
 run_bioMON_RF "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_MLP "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_MLP "swissprot" $r2d2_name $r2d2_target $r2d2_layer_dim
 echo ""
 
 echo "========= Running all experiments for tabula_muris ========="
 fcnet_layer_dim=[64,64]
 r2d2_layer_dim=[64,64]
 
-#run_benchmark_algorithms "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim 
-#run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-#run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-#run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
-#run_bioMON_MLP "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim # Pending
+# run_benchmark_algorithms "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim 
+# run_bioMON_simple_classifiers "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_KNN "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_RF "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim
+# run_bioMON_MLP "tabula_muris" $fcnet_name $fcnet_target $fcnet_layer_dim # Pending
 
-run_benchmark_algorithms "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_simple_classifiers "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_KNN "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_RF "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
-run_bioMON_MLP "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_benchmark_algorithms "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_simple_classifiers "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_KNN "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_RF "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
+# run_bioMON_MLP "tabula_muris" $r2d2_name $r2d2_target $r2d2_layer_dim
 echo ""
 
 echo ""
