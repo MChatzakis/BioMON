@@ -7,7 +7,7 @@ N_SHOT=5
 N_QUERY=15
 EPOCHS=30
 EPISODES=50
-EXP_NAME=final
+EXP_NAME=t
 
 echo "========= BioMON Experiment Script ========="
 echo ">> This script runs all the experiments performed for BioMON. It is recommended to run this script on a server with a GPU."

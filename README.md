@@ -72,6 +72,7 @@ The available methods for the method argument of run.py are summarized below.
 | bioMON_NB | BioMON with Naive Bayes |
 | bioMON_RF{n}| BioMON with a Random Forest of various estimators, specified with n, for 10,50,100,200 |
 | bioMON_SVM | BioMON with SVM |
+| bioMON_MLP_e{epochs}_l{layers} | BioMON with MLP Network. Epochs={1,5,10,15}, layers={128-64, 256-64-64, 512-256-128-64}
 
 ## Experiment Tracking
 

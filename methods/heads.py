@@ -645,14 +645,7 @@ if __name__ == "__main__":
     print(">>MLP Ok!\n")
 
     # Logistic Regression Head
-    head = LogisticRegression_Head(
-        n_way=n_way,
-        feat_dim=emb_dim,
-        seed=42,
-        batch_size=32,
-        epochs=5,
-        lr=0.001,
-    )
+    head = LogisticRegression_Head(n_way=n_way, feat_dim=emb_dim, seed=42)
     head.fit(z_support, z_labels)
     logits = head.get_logits(z_query)
     assert logits.shape == (n_way * n_query, n_way), "Wrong shape for LR logits."
