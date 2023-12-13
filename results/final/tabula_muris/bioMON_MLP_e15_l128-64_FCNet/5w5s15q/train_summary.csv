@@ -1,0 +1,2 @@
+total_training_time,total_head_fit_time,train_head_support_acc,train_head_query_acc,avg_head_fit_time
+660.1243886947632,599.5716750621796,0.9919733333333333,0.923133333333333,19.98572250207265
