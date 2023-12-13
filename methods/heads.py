@@ -267,8 +267,6 @@ class ClassicClassificationHead(ClassificationHead):
         Returns:
             np.array: np.array of shape (n_way * size, n_way), representing the logits.
         """
-        # print("Warning: get_logit_from_probs is probably not correct.")
-        # return np.log(probabilities)
         c = 0.00000001
         nom = probabilities + c
         denom = 1 - probabilities + c
