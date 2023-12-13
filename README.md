@@ -1,6 +1,8 @@
 # BioMON: Biomedical Few-shot Meta-learning Architectures with Classification Base Learners
 
-BioMON is a Few-shot Meta-learning architecture that employs various classifiers as base learners, targeted for biomedical data collections. Developed by Manos Chatzakis (emmanouil.chatzakis@epfl.ch) and Lluka Stojollari (lluka.stojollari@epfl.ch).
+BioMON is a Few-shot Meta-learning architecture that employs various classifiers as base learners, targeted for biomedical data collections. 
+
+Developed by Manos Chatzakis (emmanouil.chatzakis@epfl.ch) and Lluka Stojollari (lluka.stojollari@epfl.ch).
 
 ## Quick Start
 
@@ -19,7 +21,7 @@ Alternatively, the needed packages can be installed using pip
 python -m pip install -r requirements.txt
 ```
 
-BioMON operates on Tabula Muris and Swissprot benchmarks. Tabula Muris is automatically downloaded if it is not presents in the directory. Swissprot should be downloaded from [here](aa), and placed unzipped under a data/ directory. 
+BioMON operates on Tabula Muris and Swissprot benchmarks. Tabula Muris is automatically downloaded if it is not presents in the directory. Swissprot should be downloaded from [here]([here](https://drive.google.com/drive/u/0/folders/1IlyK9_utaiNjlS8RbIXn1aMQ_5vcUy5P)), and placed unzipped under a data/ directory. 
 
 The complete training of all BioMON variatons and competitor algorithms can be reproduced by running
 ```bash
@@ -28,7 +30,7 @@ chmod u+x run_all.sh # Makes the script executable
 ```
 It is important to run the above script is a server with a GPU, as it needs a lot of time to complete. 
 
-The complete experimental evaluation can be reproduced (after running run_all.sh) by running the notebook [BioMON.ipynb](aa) provided in this repository. It contains all the graphs used in the report, and additional plots that we did not include due to space constraints.
+The complete experimental evaluation can be reproduced (after running run_all.sh) by running the notebook [bioMON.ipynb](bioMON.ipynb) provided in this repository. It contains all the graphs used in the report, and additional plots that we did not include due to space constraints.
 
 ## Usage
 Here we provide important information of how the project is organized, and how to use the provided code.
@@ -37,10 +39,10 @@ Here we provide important information of how the project is organized, and how t
 The repository uses hydra to operate. All the configurations needed, included hyperparameters and which methods are used can be found under the conf/ directory. 
 
 ### Provided Methods
-We provide various classifiers available, from classic ML methods (Logistic Regression, SVMs, ...) to Deep Learning Neural Networks. All classifiers are available at [heads.py](aaa). BioMON supports two embedding methods, [FCNet](cite) and and [R2D2](cite), available under backbones/ directory. In addition, we provide other few-shot learning methods serving as competitors, such as Protonet[Snell et al. (2017)](https://proceedings.neurips.cc/paper_files/paper/2017/file/cb8da6767461f2812ae4290eac7cbc42-Paper.pdf), MAML[Finn et al. (2017)](https://proceedings.mlr.press/v70/finn17a/finn17a.pdf), MatchingNet[Vinyals et al. (2016)](https://proceedings.neurips.cc/paper/2016/file/90e1357833654983612fb05e3ec9148c-Paper.pdf), and Baselines[Chen et al. (2019)](https://arxiv.org/pdf/1904.04232.pdf):
+We provide various classifiers available, from classic ML methods (Logistic Regression, SVMs, ...) to Deep Learning Neural Networks. All classifiers are available at [heads.py](methods/heads.py). BioMON supports two embedding methods, [FCNet](https://link.springer.com/chapter/10.1007/978-3-319-67159-8_9) and and [R2D2](https://proceedings.neurips.cc/paper/2019/hash/3198dfd0aef271d22f7bcddd6f12f5cb-Abstract.html), available under backbones/ directory. In addition, we provide other few-shot learning methods serving as competitors, such as Protonet[Snell et al. (2017)](https://proceedings.neurips.cc/paper_files/paper/2017/file/cb8da6767461f2812ae4290eac7cbc42-Paper.pdf), MAML[Finn et al. (2017)](https://proceedings.mlr.press/v70/finn17a/finn17a.pdf), MatchingNet[Vinyals et al. (2016)](https://proceedings.neurips.cc/paper/2016/file/90e1357833654983612fb05e3ec9148c-Paper.pdf), and Baselines[Chen et al. (2019)](https://arxiv.org/pdf/1904.04232.pdf):
 
 ### Custom Training and Testing
-To directly test or train BioMON or any of the competitors, the [run.py](aa) file shall be used. To run it, use:
+To directly test or train BioMON or any of the competitors, the [run.py](run.py) file shall be used. To run it, use:
 ```bash
 python3 run.py exp.name={name} method={method} model={backbone_name} dataset={dataset} backbone._target_={backbone_class} backbone.layer_dim={backbone_layers} n_way={n_way} n_shot={n_shot} n_query={n_query} iter_num={episodes} method.stop_epoch={stop_epoch} method.start_epoch={start_epoch}     
 ```
@@ -53,7 +55,7 @@ python run.py exp.name=random_test method=bioMON_LR dataset=tabula_muris model=R
 ```
 The above command will run train 30 epochs of BioMON with a Logistic Regression classifier on the Tabula Muris dataset, using a 2-layer R2D2 embedding, for 5-way 15-shot learning with 15 queries per episode. The results will be saved under results/random_test/tabula_muris/.
 
-In order to explicitely test a model (not train), an additional argument `mode=test` should be used for run.py. Also, we use Wandb for experiment tracking. To set it, see the corresponding [section](there). To disable it, use `wandb.mode=disabled`
+In order to explicitely test a model (not train), an additional argument `mode=test` should be used for run.py. Also, we use Wandb for experiment tracking. To set it, see the corresponding [section](#experiment-tracking). To disable it, use `wandb.mode=disabled`
 
 The available methods for the method argument of run.py are summarized below.
 
@@ -83,4 +85,4 @@ To log in to WandB, run `wandb login` and enter the API key provided on the webs
 
 
 ## About
-This project was developed for the [Deep Learning in Biomedicine course of EPFL (cs503)](aa). The episodic data loaders used to load the datasets were provided by the course, while the competitor algorithms are adaptions of the online versions available. 
+This project was developed for the [Deep Learning in Biomedicine course of EPFL (cs503)](https://edu.epfl.ch/coursebook/fr/deep-learning-in-biomedicine-CS-502). The episodic data loaders used to load the datasets were provided by the course, while the competitor algorithms are adaptions of the online versions available. 
